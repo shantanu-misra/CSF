@@ -64,7 +64,35 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
   char *hex = NULL;
-  // TODO: implement
+
+    // Calculate the total number of hex digits needed
+    int total_digits = 1;
+    for (int i = 7; i >= 0; i--) {
+      uint32_t temp = val.data[i];
+      while (temp >>= 4) {
+        total_digits++;
+      }
+    }
+
+    // Allocate memory for the hex string
+    hex = (char*) malloc(total_digits + 1);
+    if (hex == NULL) {
+      return NULL;
+    }
+
+    // Convert each uint32_t value to a hex string and concatenate them
+    for (int i = 7; i >= 0; i--) {
+      int num_digits = 1;
+      while (val.data[i] >>= 4) {
+        num_digits++;
+      }
+      sprintf(hex_ptr, "%0*x", num_digits, val.data[i]);
+      hex_ptr += num_digits;
+    }
+
+    // end with null terminator
+    *hex_ptr = '\0';
+
   return hex;
 }
 
