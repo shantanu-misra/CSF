@@ -49,13 +49,13 @@ UInt256 uint256_create_from_hex(const char *hex) {
     while (h_idex >= 0 && chnk_len < 8) {
       chnk_str[chnk_len] = hex[h_idex];
       h_idex--;
-      chunk_len++;
+      chnk_len++;
     }
 
     chnk_str[chnk_len] = '\0';
     
     // Convert the chunk to uint32_t and assign it
-    result.data[data_index++] = (uint32_t) strtoul(chnk_str, NULL, 16);
+    result.data[d_idx++] = (uint32_t) strtoul(chnk_str, NULL, 16);
   }
   return result;
 }
@@ -79,6 +79,8 @@ char *uint256_format_as_hex(UInt256 val) {
     if (hex == NULL) {
       return NULL;
     }
+    
+    char* hex_ptr = hex;
 
     // Convert each uint32_t value to a hex string and concatenate them
     for (int i = 7; i >= 0; i--) {
