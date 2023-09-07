@@ -64,7 +64,9 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-  // TODO
+  char *hex = NULL;
+  // TODO: implement
+  return hex;
 }
 
 // Get 32 bits of data from a UInt256 value.
@@ -96,15 +98,6 @@ UInt256 uint256_add(UInt256 left, UInt256 right) {
   return sum;
 }
 
-// Helper function to check if a UInt256 value is zero
-int uint256_is_zero(const UInt256 val) {
-  for (int i = 0; i < 8; i++) {
-    if (val.data[i] != 0) {
-        return 0; // Not zero
-    }
-  }
-  return 1; // Zero
-}
 
 // Compute the difference of two UInt256 values.
 UInt256 uint256_sub(UInt256 left, UInt256 right) {
@@ -117,14 +110,27 @@ UInt256 uint256_sub(UInt256 left, UInt256 right) {
 
 // Return the two's-complement negation of the given UInt256 value.
 UInt256 uint256_negate(UInt256 val) {
-  // TODO
+  UInt256 result;
+  uint32_t one = 1;
+
+  // first negate all bits
+  for (int i = 0; i < 8; i++) {
+    result.data[i] = ~val.data[i];
+  }
+
+  // add one
+  result = uint256_add(result, uint256_create_from_u32(one));
+
+  return result;
 }
 
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
-  // TODO
+  UInt256 result;
+  // TODO: implement
+  return result;
 }
 
 // Return the result of rotating every bit in val nbits to
