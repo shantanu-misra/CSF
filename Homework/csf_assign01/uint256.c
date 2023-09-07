@@ -64,41 +64,37 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-  char *hex = NULL;
 
-  char* temp_hex = (char*) malloc(16 + 1);
+  char *hex = (char*) malloc(64+1);
+  char* buff = (char*) malloc(8+1);
+
+  int first_sig_index = 0;
+  int hex_idx = 0;
 
   for (int i = 7; i > -1; i--) {
-    char* buff = (char*) malloc(2+1);
-    buff[2] = '\0';
-    
-    sprintf(buff, "%x", val.data[i]);
-    strcat(temp_hex, buff);
-    
-    free(buff);
-  }
-
-  // count number of trailing zeros
-  int num_trailing_0s = 0;
-  int num_sig_digits = 16;
-  for (int i = 0; i < 16; i++) {
-    if (temp_hex[i] == '0') {
-      num_sig_digits--;
-      num_trailing_0s++;
+    if ( (i != 0) && val.data[i] == (uint32_t)0) {
+      continue;
     }
-    else {break;}
+    first_sig_index = i;
+    break;
   }
 
-  // allocate memory for hex
-  hex = (char*)malloc(num_sig_digits + 1);
-  hex[num_sig_digits] = '\0';
-  for (int i = 0; i < num_sig_digits; i++) {
-    hex[i] = temp_hex[i+num_trailing_0s];
-  }
-  // TODO: FIX REMOVAL OF LAST 0
+  sprintf(buff, "%x", val.data[first_sig_index]);
 
-  // free temp_hex
-  free(temp_hex);
+  for (int i = 0; buff[i] != '\0'; i++) {
+    hex[hex_idx++] = buff[i];
+  }
+
+  for (int i = first_sig_index - 1; i > -1; i--) {
+    sprintf(buff, "%08x", val.data[i]);
+    for (int j = 0; j < 8; j++) {
+      hex[hex_idx++] = buff[j];
+    }
+  }
+  hex[hex_idx] = '\0';
+
+  // free buf
+  free(buff);
 
   return hex;
 }
