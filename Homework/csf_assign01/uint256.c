@@ -64,39 +64,7 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
-  char *hex = NULL;
-
-    // Calculate the total number of hex digits needed
-    int total_digits = 1;
-    for (int i = 7; i >= 0; i--) {
-      uint32_t temp = val.data[i];
-      while (temp >>= 4) {
-        total_digits++;
-      }
-    }
-
-    // Allocate memory for the hex string
-    hex = (char*) malloc(total_digits + 1);
-    if (hex == NULL) {
-      return NULL;
-    }
-    
-    char* hex_ptr = hex;
-
-    // Convert each uint32_t value to a hex string and concatenate them
-    for (int i = 7; i >= 0; i--) {
-      int num_digits = 1;
-      while (val.data[i] >>= 4) {
-        num_digits++;
-      }
-      sprintf(hex_ptr, "%0*x", num_digits, val.data[i]);
-      hex_ptr += num_digits;
-    }
-
-    // end with null terminator
-    *hex_ptr = '\0';
-
-  return hex;
+  // TODO
 }
 
 // Get 32 bits of data from a UInt256 value.
@@ -112,31 +80,51 @@ uint32_t uint256_get_bits(UInt256 val, unsigned index) {
 // Compute the sum of two UInt256 values.
 UInt256 uint256_add(UInt256 left, UInt256 right) {
   UInt256 sum;
-  // TODO: implement
+  uint32_t carry = 0; // Initialize the carry to 0
+
+  for (int i = 0; i < 8; i++) {
+    // Calculate the sum of the current column, considering the carry
+    uint64_t column_sum = (uint64_t)left.data[i] + right.data[i] + carry;
+
+    // Extract the lower 32 bits as the result for the current column
+    sum.data[i] = (uint32_t)column_sum;
+
+    // Update the carry for the next column
+    carry = (uint32_t)(column_sum >> 32);
+  }
+
   return sum;
+}
+
+// Helper function to check if a UInt256 value is zero
+int uint256_is_zero(const UInt256 val) {
+  for (int i = 0; i < 8; i++) {
+    if (val.data[i] != 0) {
+        return 0; // Not zero
+    }
+  }
+  return 1; // Zero
 }
 
 // Compute the difference of two UInt256 values.
 UInt256 uint256_sub(UInt256 left, UInt256 right) {
-  UInt256 result;
-  // TODO: implement
-  return result;
+  // Compute the two's complement negation of 'right'
+  UInt256 neg_right = uint256_negate(right);
+
+  // Add 'left' and the negated 'right' to get the difference
+  return uint256_add(left, neg_right);
 }
 
 // Return the two's-complement negation of the given UInt256 value.
 UInt256 uint256_negate(UInt256 val) {
-  UInt256 result;
-  // TODO: implement
-  return result;
+  // TODO
 }
 
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
-  UInt256 result;
-  // TODO: implement
-  return result;
+  // TODO
 }
 
 // Return the result of rotating every bit in val nbits to
