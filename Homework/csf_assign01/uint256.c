@@ -36,6 +36,7 @@ UInt256 uint256_create(const uint32_t data[8]) {
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex(const char *hex) {
   UInt256 result;
+  memset(result.data, 0, sizeof(result.data)); // initialise to 0
   size_t len = strlen(hex);
 
   // Start from the rightmost 8 hex digits and work left
