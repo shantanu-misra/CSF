@@ -154,12 +154,46 @@ UInt256 uint256_negate(UInt256 val) {
   return result;
 }
 
+// Helper function to convert hex strings to binary strings
+char* convert_hex_str_to_bin_str(char* hex) {
+  char bin_str[256] = "";
+
+  for (int i = 0; i < strlen(hex); i++) {
+    switch (hex[i]) {
+      case '0': strcat(bin_str, "0000"); break;
+      case '1': strcat(bin_str, "0001"); break;
+      case '2': strcat(bin_str, "0010"); break;
+      case '3': strcat(bin_str, "0011"); break;
+      case '4': strcat(bin_str, "0100"); break;
+      case '5': strcat(bin_str, "0101"); break;
+      case '6': strcat(bin_str, "0110"); break;
+      case '7': strcat(bin_str, "0111"); break;
+      case '8': strcat(bin_str, "1000"); break;
+      case '9': strcat(bin_str, "1001"); break;
+      case 'A': case 'a': strcat(bin_str, "1010"); break;
+      case 'B': case 'b': strcat(bin_str, "1011"); break;
+      case 'C': case 'c': strcat(bin_str, "1100"); break;
+      case 'D': case 'd': strcat(bin_str, "1101"); break;
+      case 'E': case 'e': strcat(bin_str, "1110"); break;
+      case 'F': case 'f': strcat(bin_str, "1111"); break;
+      default: break; // Invalid hexadecimal character
+    }
+  }
+}
+
+
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
 UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
   UInt256 result;
-  // TODO: implement
+
+  // mod nbits by 256 so that shifting makes sense
+  nbits %= 256;
+
+  // convert UInt256 val into a hex
+  (char*) hex = uint256_format_as_hex(val);
+
   return result;
 }
 
