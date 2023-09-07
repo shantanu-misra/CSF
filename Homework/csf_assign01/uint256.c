@@ -65,11 +65,40 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
   char *hex = NULL;
-  hex = (char*) malloc(16 + 1);
 
-  for (int i = 0; i < 8; i++) {
-    sprintf(hex, "%x", val);
+  char* temp_hex = (char*) malloc(16 + 1);
+
+  for (int i = 7; i > -1; i--) {
+    char* buff = (char*) malloc(2+1);
+    buff[2] = '\0';
+    
+    sprintf(buff, "%x", val.data[i]);
+    strcat(temp_hex, buff);
+    
+    free(buff);
   }
+
+  // count number of trailing zeros
+  int num_trailing_0s = 0;
+  int num_sig_digits = 16;
+  for (int i = 0; i < 16; i++) {
+    if (temp_hex[i] == '0') {
+      num_sig_digits--;
+      num_trailing_0s++;
+    }
+    else {break;}
+  }
+
+  // allocate memory for hex
+  hex = (char*)malloc(num_sig_digits + 1);
+  hex[num_sig_digits] = '\0';
+  for (int i = 0; i < num_sig_digits; i++) {
+    hex[i] = temp_hex[i+num_trailing_0s];
+  }
+  // TODO: FIX REMOVAL OF LAST 0
+
+  // free temp_hex
+  free(temp_hex);
 
   return hex;
 }
