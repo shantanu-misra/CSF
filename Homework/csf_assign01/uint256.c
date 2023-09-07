@@ -65,7 +65,12 @@ UInt256 uint256_create_from_hex(const char *hex) {
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
   char *hex = NULL;
-  // TODO: implement
+  hex = (char*) malloc(16 + 1);
+
+  for (int i = 0; i < 8; i++) {
+    sprintf(hex, "%x", val);
+  }
+
   return hex;
 }
 
