@@ -179,6 +179,26 @@ char* convert_hex_str_to_bin_str(char* hex) {
       default: break; // Invalid hexadecimal character
     }
   }
+  // Allocate memory for the binary string and copy the content
+  char* bin = malloc(strlen(bin_str) + 1);
+  strcpy(bin, bin_str);
+
+  return bin;
+}
+
+// Helper function to convert binanry string to hex
+char* convert_bin_str_to_hex_str(char* bin) {
+  char* hex = malloc(strlen(bin) + 1);
+
+  for (int i = 0; i < strlen(bin); i += 4) {
+    char binaryGroup[5]; // +1 for null terminator
+    strncpy(binaryGroup, bin + i, 4);
+    binaryGroup[4] = '\0';
+    
+    int decimalValue = strtol(binaryGroup, NULL, 2); // Convert binary to decimal
+    sprintf(hex + (i / 4), "%x", decimalValue); // Convert decimal to hexadecimal
+  }
+  return hex;
 }
 
 
@@ -192,7 +212,24 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
   nbits %= 256;
 
   // convert UInt256 val into a hex
-  (char*) hex = uint256_format_as_hex(val);
+  char* hex = uint256_format_as_hex(val);
+
+  // convert hex to binary
+  char* bin = convert_hex_str_to_bin_str(hex);
+
+  // shift the binary
+  int len = strlen(bin);
+  char temp[nbits + 1]; // Create a temporary buffer to store the first 'n' characters
+  strncpy(temp, bin, nbits); // Copy the first 'n' characters to the temporary buffer
+  temp[nbits] = '\0';
+  memmove(bin, bin + nbits, len - nbits + 1); // Shift the remaining characters to the beginning
+  strcat(bin, temp); // Append the temporary buffer at the end
+
+  // convert binary back to hex
+  char* shifted_hex = convert_bin_str_to_hex_str(bin);
+
+  // convert hex to UInt256
+  result = uint256_create_from_hex(shifted_hex);
 
   return result;
 }

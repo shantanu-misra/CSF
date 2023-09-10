@@ -51,6 +51,12 @@ UInt256 uint256_negate(UInt256 val);
 UInt256 uint256_mul(UInt256 left, UInt256 right);
 #endif
 
+// Helper function to convert hex string to binary
+char* convert_hex_str_to_bin_str(char* hex);
+
+// Helper function to convert binary string to hex
+char* convert_bin_str_to_hex_str(char* bin);
+
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
 // should be shifted back into the least significant bits.
