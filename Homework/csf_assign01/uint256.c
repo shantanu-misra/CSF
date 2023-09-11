@@ -294,7 +294,7 @@ UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
   char temp[nbits + 1]; // Create a temporary buffer to store the last 'n' characters
   strncpy(temp, bin + (len - nbits), nbits); // Copy the last 'n' characters to the temporary buffer
   temp[nbits] = '\0';
-  memmove(bin + nbits, bin, len - nbits + 1); // Shift the remaining characters to the right
+  memmove(bin + nbits, bin, len - nbits); // Shift the remaining characters to the right
   strncpy(bin, temp, nbits); // Copy the temporary buffer to the beginning
 
   // convert binary back to hex
