@@ -156,9 +156,9 @@ UInt256 uint256_negate(UInt256 val) {
 
 // Helper function to convert hex strings to binary strings
 char* convert_hex_str_to_bin_str(char* hex) {
-  char bin_str[256] = "";
+  char* bin_str = malloc(256 + 1);
 
-  for (int i = 0; i < strlen(hex); i++) {
+  for (int i = 0; i < 8*sizeof(hex); i++) {
     switch (hex[i]) {
       case '0': strcat(bin_str, "0000"); break;
       case '1': strcat(bin_str, "0001"); break;
@@ -179,11 +179,7 @@ char* convert_hex_str_to_bin_str(char* hex) {
       default: break; // Invalid hexadecimal character
     }
   }
-  // Allocate memory for the binary string and copy the content
-  char* bin = malloc(strlen(bin_str) + 1);
-  strcpy(bin, bin_str);
-
-  return bin;
+  return bin_str;
 }
 
 // Helper function to convert binanry string to hex
@@ -211,11 +207,22 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
   // mod nbits by 256 so that shifting makes sense
   nbits %= 256;
 
+  // initialise hex string with all zeros
+  char* full_hex = (char*) malloc(64+1);
+  for (int i = 0; i < 64; i++) {
+    full_hex[i] = '0';
+  }
+  full_hex[64] = '\0';
+
   // convert UInt256 val into a hex
-  char* hex = uint256_format_as_hex(val);
+  char* actual_hex = uint256_format_as_hex(val);
+
+  for (int i = 0; i < strlen(actual_hex); i++) {
+    full_hex[64-strlen(actual_hex)+i] = actual_hex[i];
+  }
 
   // convert hex to binary
-  char* bin = convert_hex_str_to_bin_str(hex);
+  char* bin = convert_hex_str_to_bin_str(full_hex);
 
   // shift the binary
   int len = strlen(bin);
