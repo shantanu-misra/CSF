@@ -156,9 +156,10 @@ UInt256 uint256_negate(UInt256 val) {
 
 // Helper function to convert hex strings to binary strings
 char* convert_hex_str_to_bin_str(char* hex) {
+  int length = strlen(hex);
   char* bin_str = malloc(256 + 1);
 
-  for (int i = 0; i < 8*sizeof(hex); i++) {
+  for (int i = 0; i < length; i++) {
     switch (hex[i]) {
       case '0': strcat(bin_str, "0000"); break;
       case '1': strcat(bin_str, "0001"); break;
@@ -184,9 +185,11 @@ char* convert_hex_str_to_bin_str(char* hex) {
 
 // Helper function to convert binanry string to hex
 char* convert_bin_str_to_hex_str(char* bin) {
-  char* hex = malloc(strlen(bin) + 1);
+  int bin_length = strlen(bin);
 
-  for (int i = 0; i < strlen(bin); i += 4) {
+  char* hex = malloc(bin_length + 1);
+
+  for (int i = 0; i < bin_length; i += 4) {
     char binaryGroup[5]; // +1 for null terminator
     strncpy(binaryGroup, bin + i, 4);
     binaryGroup[4] = '\0';
@@ -216,8 +219,9 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
 
   // convert UInt256 val into a hex
   char* actual_hex = uint256_format_as_hex(val);
+  int actual_hex_length = strlen(actual_hex);
 
-  for (int i = 0; i < strlen(actual_hex); i++) {
+  for (int i = 0; i < actual_hex_length; i++) {
     full_hex[64-strlen(actual_hex)+i] = actual_hex[i];
   }
 
@@ -246,6 +250,41 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
 // should be shifted back into the most significant bits.
 UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
   UInt256 result;
-  // TODO: implement
+
+  // mod nbits by 256 so that shifting makes sense
+  nbits %= 256;
+
+  // initialise hex string with all zeros
+  char* full_hex = (char*) malloc(64+1);
+  for (int i = 0; i < 64; i++) {
+    full_hex[i] = '0';
+  }
+  full_hex[64] = '\0';
+
+  // convert UInt256 val into a hex
+  char* actual_hex = uint256_format_as_hex(val);
+  int actual_hex_length = strlen(actual_hex);
+
+  for (int i = 0; i < actual_hex_length; i++) {
+    full_hex[64-strlen(actual_hex)+i] = actual_hex[i];
+  }
+
+  // convert hex to binary
+  char* bin = convert_hex_str_to_bin_str(full_hex);
+
+  // Shift the binary to the right
+  int len = strlen(bin);
+  char temp[nbits + 1]; // Create a temporary buffer to store the last 'n' characters
+  strncpy(temp, bin + (len - nbits), nbits); // Copy the last 'n' characters to the temporary buffer
+  temp[nbits] = '\0';
+  memmove(bin + nbits, bin, len - nbits + 1); // Shift the remaining characters to the right
+  strncpy(bin, temp, nbits); // Copy the temporary buffer to the beginning
+
+  // convert binary back to hex
+  char* shifted_hex = convert_bin_str_to_hex_str(bin);
+
+  // convert hex to UInt256
+  result = uint256_create_from_hex(shifted_hex);
+
   return result;
 }
