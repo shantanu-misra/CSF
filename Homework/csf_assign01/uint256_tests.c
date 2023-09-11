@@ -164,6 +164,24 @@ void test_create_from_hex(TestObjs *objs) {
 
   UInt256 max = uint256_create_from_hex("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
   ASSERT_SAME(objs->max, max);
+
+  // custom test to check rotation hex number
+  uint32_t data2[8] = {0x000000ABU, 0U, 0U, 0U, 0U, 0U, 0U, 0xCD000000U};
+  UInt256 rot_val_hex_str = uint256_create_from_hex("CD000000000000000000000000000000000000000000000000000000000000AB");
+  UInt256 rot_val_uint = uint256_create(data2);
+  ASSERT_SAME(rot_val_hex_str, rot_val_uint);
+
+  // custom test to check rotation hex number - after left rotation
+  uint32_t data3[8] = {0x00000ABCU, 0U, 0U, 0U, 0U, 0U, 0U, 0xD0000000U};
+  UInt256 rot_val_hex_str_left = uint256_create_from_hex("D000000000000000000000000000000000000000000000000000000000000ABC");
+  UInt256 rot_val_uint_left = uint256_create(data3);
+  ASSERT_SAME(rot_val_hex_str_left, rot_val_uint_left);
+
+  // custom test to check rotation hex number - after right rotation
+  uint32_t data4[8] = {0x0000000AU, 0U, 0U, 0U, 0U, 0U, 0U, 0xBCD00000U};
+  UInt256 rot_val_hex_str_right = uint256_create_from_hex("BCD000000000000000000000000000000000000000000000000000000000000A");
+  UInt256 rot_val_uint_right = uint256_create(data4);
+  ASSERT_SAME(rot_val_hex_str_right, rot_val_uint_right);
 }
 
 void test_format_as_hex(TestObjs *objs) {
@@ -180,6 +198,12 @@ void test_format_as_hex(TestObjs *objs) {
   s = uint256_format_as_hex(objs->max);
   ASSERT(0 == strcmp("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", s));
   free(s);
+
+  // custom tests for non-trivial values
+  uint32_t format_test[8] = {0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU};
+  s = uint256_format_as_hex(uint256_create(format_test));
+  ASSERT(0 == strcmp("0A0A0A0A0A0A0A0A", s));
+  free(s);
 }
 
 void test_add(TestObjs *objs) {
@@ -195,6 +219,10 @@ void test_add(TestObjs *objs) {
   UInt256 two;
   INIT_FROM_ARR(two, two_data);
   result = uint256_add(objs->one, objs->one);
+  ASSERT_SAME(two, result);
+
+  // custom addition test case to add 0 to a number
+  result = uint256_add(two, objs->zero);
   ASSERT_SAME(two, result);
 
   result = uint256_add(objs->max, objs->one);

@@ -35,31 +35,31 @@ UInt256 uint256_create(const uint32_t data[8]) {
 
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex(const char *hex) {
-  UInt256 result;
-  memset(result.data, 0, sizeof(result.data)); // initialise to 0
-  size_t len = strlen(hex);
+  UInt256 result = {0};
+  int len = strlen(hex);
+  int shift = 0;
+  int i = len - 1;
 
-  // Start from the rightmost 8 hex digits and work left
-  int d_idx = 0;
-  int h_idex = len - 1;
+  while (i >= 0 && shift < 256) {
+    char c = hex[i];
+    uint32_t value = 0;
 
-  while (d_idx < 8 && h_idex >= 0) {
-    char chnk_str[9]; // 8 hex digits + null terminator
-    int chnk_len = 0;
-
-    while (h_idex >= 0 && chnk_len < 8) {
-      chnk_str[chnk_len] = hex[h_idex];
-      h_idex--;
-      chnk_len++;
+    if (c >= '0' && c <= '9') {
+      value = c - '0';
+    } else if (c >= 'a' && c <= 'f') {
+      value = c - 'a' + 10;
+    } else if (c >= 'A' && c <= 'F') {
+      value = c - 'A' + 10;
     }
 
-    chnk_str[chnk_len] = '\0';
-    
-    // Convert the chunk to uint32_t and assign it
-    result.data[d_idx++] = (uint32_t) strtoul(chnk_str, NULL, 16);
+    result.data[shift / 32] |= value << (shift % 32);
+    shift += 4;
+    i--;
   }
   return result;
 }
+
+
 
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
@@ -157,7 +157,9 @@ UInt256 uint256_negate(UInt256 val) {
 // Helper function to convert hex strings to binary strings
 char* convert_hex_str_to_bin_str(char* hex) {
   int length = strlen(hex);
-  char* bin_str = malloc(256 + 1);
+
+  // char* bin_str = (char*) malloc(256 + 1);
+  char* bin_str = (char*) calloc(256+1, sizeof(char));
 
   for (int i = 0; i < length; i++) {
     switch (hex[i]) {
@@ -180,6 +182,7 @@ char* convert_hex_str_to_bin_str(char* hex) {
       default: break; // Invalid hexadecimal character
     }
   }
+  bin_str[256] = '\0';
   return bin_str;
 }
 
@@ -200,6 +203,18 @@ char* convert_bin_str_to_hex_str(char* bin) {
   return hex;
 }
 
+// Helper function to remove leading 0s in hex string
+char* remove_leading_zeros(char* hex) {
+  // Find the first non-zero character
+  int nonZeroPos = 0;
+  while (hex[nonZeroPos] == '0' && hex[nonZeroPos + 1] != '\0') {
+    nonZeroPos++;}
+
+  // Create a new string starting from the non-zero position
+  char* result = strdup(hex + nonZeroPos);
+
+  return result;
+}
 
 // Return the result of rotating every bit in val nbits to
 // the left.  Any bits shifted past the most significant bit
@@ -239,8 +254,10 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
   // convert binary back to hex
   char* shifted_hex = convert_bin_str_to_hex_str(bin);
 
+  char* final_hex = remove_leading_zeros(shifted_hex); // remove leading 0s
+
   // convert hex to UInt256
-  result = uint256_create_from_hex(shifted_hex);
+  result = uint256_create_from_hex(final_hex);
 
   return result;
 }
@@ -283,8 +300,10 @@ UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
   // convert binary back to hex
   char* shifted_hex = convert_bin_str_to_hex_str(bin);
 
+  char* final_hex = remove_leading_zeros(shifted_hex); // remove leading 0s
+
   // convert hex to UInt256
-  result = uint256_create_from_hex(shifted_hex);
+  result = uint256_create_from_hex(final_hex);
 
   return result;
 }
