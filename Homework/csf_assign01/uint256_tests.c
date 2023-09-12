@@ -199,11 +199,31 @@ void test_format_as_hex(TestObjs *objs) {
   ASSERT(0 == strcmp("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", s));
   free(s);
 
-  // custom tests for non-trivial values
-  // uint32_t format_test[8] = {0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU};
-  // s = uint256_format_as_hex(uint256_create(format_test));
-  // ASSERT(0 == strcmp("0A0A0A0A0A0A0A0A", s));
-  // free(s);
+  // custom tests for non-trivial values at all positions
+  uint32_t format_test1[8] = {0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU, 0xAU};
+  s = uint256_format_as_hex(uint256_create(format_test1));
+  ASSERT(0 == strcmp("a0000000a0000000a0000000a0000000a0000000a0000000a0000000a", s));
+  free(s);
+
+  uint32_t format_test2[8] = {0xAU, 0U, 0U, 0U, 0U, 0U, 0U, 0U};
+  s = uint256_format_as_hex(uint256_create(format_test2));
+  ASSERT(0 == strcmp("a", s));
+  free(s);
+
+  uint32_t format_test3[8] = {0U, 0xBU, 0U, 0U, 0U, 0U, 0U, 0U};
+  s = uint256_format_as_hex(uint256_create(format_test3));
+  ASSERT(0 == strcmp("b00000000", s));
+  free(s);
+
+  uint32_t format_test4[8] = {0U, 0U, 0xCU, 0U, 0U, 0U, 0U, 0U};
+  s = uint256_format_as_hex(uint256_create(format_test4));
+  ASSERT(0 == strcmp("c0000000000000000", s));
+  free(s);
+
+  uint32_t format_test5[8] = {0U, 0U, 0U, 0xDU, 0U, 0U, 0U, 0U};
+  s = uint256_format_as_hex(uint256_create(format_test5));
+  ASSERT(0 == strcmp("d000000000000000000000000", s));
+  free(s);
 }
 
 void test_add(TestObjs *objs) {
