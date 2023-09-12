@@ -40,10 +40,12 @@ UInt256 uint256_create_from_hex(const char *hex) {
   int shift = 0;
   int i = len - 1;
 
+  // Loop through the input string in reverse order and convert hexadecimal digits to binary
   while (i >= 0 && shift < 256) {
     char c = hex[i];
     uint32_t value = 0;
 
+    // Check if the character is a valid hexadecimal digit (0-9, a-f, A-F)
     if (c >= '0' && c <= '9') {
       value = c - '0';
     } else if (c >= 'a' && c <= 'f') {
@@ -52,6 +54,7 @@ UInt256 uint256_create_from_hex(const char *hex) {
       value = c - 'A' + 10;
     }
 
+    // Update the result's data array with the converted value at the appropriate bit position
     result.data[shift / 32] |= value << (shift % 32);
     shift += 4;
     i--;
@@ -59,18 +62,17 @@ UInt256 uint256_create_from_hex(const char *hex) {
   return result;
 }
 
-
-
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex(UInt256 val) {
 
-  char *hex = (char*) malloc(64+1);
+  char* hex = (char*) malloc(64+1);
   char* buff = (char*) malloc(8+1);
 
   int first_sig_index = 0;
-  int hex_idx = 0;
+  int h_idx = 0;
 
+  // Find the index of the most significant non-zero word in val.data
   for (int i = 7; i > -1; i--) {
     if ( (i != 0) && val.data[i] == (uint32_t)0) {
       continue;
@@ -79,23 +81,24 @@ char *uint256_format_as_hex(UInt256 val) {
     break;
   }
 
+  // Convert the most significant non-zero word to hexadecimal and store it in buff
   sprintf(buff, "%x", val.data[first_sig_index]);
 
+  // Copy the characters from buff to the output hex string
   for (int i = 0; buff[i] != '\0'; i++) {
-    hex[hex_idx++] = buff[i];
+    hex[h_idx++] = buff[i];
   }
 
+  // Convert and copy the remaining words to the output hex string
   for (int i = first_sig_index - 1; i > -1; i--) {
-    sprintf(buff, "%08x", val.data[i]);
+    sprintf(buff, "%08x", val.data[i]); // Convert the word to an 8-character hexadecimal string
     for (int j = 0; j < 8; j++) {
-      hex[hex_idx++] = buff[j];
+      hex[h_idx++] = buff[j]; // Copy each character to the output hex string
     }
   }
-  hex[hex_idx] = '\0';
 
-  // free buf
+  hex[h_idx] = '\0';
   free(buff);
-
   return hex;
 }
 
@@ -227,15 +230,16 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
 
   // initialise hex string with all zeros
   char* full_hex = (char*) malloc(64+1);
+  full_hex[64] = '\0';
   for (int i = 0; i < 64; i++) {
     full_hex[i] = '0';
   }
-  full_hex[64] = '\0';
 
   // convert UInt256 val into a hex
   char* actual_hex = uint256_format_as_hex(val);
   int actual_hex_length = strlen(actual_hex);
 
+  // transfer the actual hex into the full hex with leading 0s
   for (int i = 0; i < actual_hex_length; i++) {
     full_hex[64-strlen(actual_hex)+i] = actual_hex[i];
   }
@@ -254,7 +258,7 @@ UInt256 uint256_rotate_left(UInt256 val, unsigned nbits) {
   // convert binary back to hex
   char* shifted_hex = convert_bin_str_to_hex_str(bin);
 
-  char* final_hex = remove_leading_zeros(shifted_hex); // remove leading 0s
+  char* final_hex = remove_leading_zeros(shifted_hex); // remove leading 0s from hex
 
   // convert hex to UInt256
   result = uint256_create_from_hex(final_hex);
@@ -273,15 +277,16 @@ UInt256 uint256_rotate_right(UInt256 val, unsigned nbits) {
 
   // initialise hex string with all zeros
   char* full_hex = (char*) malloc(64+1);
+  full_hex[64] = '\0';
   for (int i = 0; i < 64; i++) {
     full_hex[i] = '0';
   }
-  full_hex[64] = '\0';
 
   // convert UInt256 val into a hex
   char* actual_hex = uint256_format_as_hex(val);
   int actual_hex_length = strlen(actual_hex);
 
+  // initialise hex string with all zeros
   for (int i = 0; i < actual_hex_length; i++) {
     full_hex[64-strlen(actual_hex)+i] = actual_hex[i];
   }
