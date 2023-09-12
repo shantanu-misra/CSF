@@ -295,6 +295,62 @@ void test_rotate_left(TestObjs *objs) {
   ASSERT(0U == result.data[5]);
   ASSERT(0U == result.data[6]);
   ASSERT(0xD0000000U == result.data[7]);
+
+  // left rotate tests
+  result = uint256_rotate_left(objs->rot, 8);
+  ASSERT(0x00ABCDU == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0U == result.data[7]);
+
+  // left rotate tests
+  result = uint256_rotate_left(objs->rot, 1);
+  ASSERT(0x00157U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0x9a000000U == result.data[7]);
+
+  // left rotate tests
+  result = uint256_rotate_left(objs->rot, 3);
+  ASSERT(0x00055eU == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0x68000000U == result.data[7]);
+
+  // left rotate tests
+  // 1579a0 0000000 0000000
+  result = uint256_rotate_left(objs->rot, 69);
+  ASSERT(0U == result.data[0]);
+  ASSERT(0xA0000000 == result.data[1]);
+  ASSERT(0x00001579 == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0U == result.data[7]);
+
+  // left rotate tests for greater than 256 shifting
+  result = uint256_rotate_left(objs->rot, 4+256);
+  ASSERT(0x00000ABCU == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0xD0000000U == result.data[7]);
 }
 
 void test_rotate_right(TestObjs *objs) {
@@ -316,4 +372,67 @@ void test_rotate_right(TestObjs *objs) {
   ASSERT(0U == result.data[5]);
   ASSERT(0U == result.data[6]);
   ASSERT(0xBCD00000U == result.data[7]);
+
+  // custom right tests
+  result = uint256_rotate_right(objs->rot, 8);
+  ASSERT(0U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0xABCD0000U == result.data[7]);
+
+  result = uint256_rotate_right(objs->rot, 12);
+  ASSERT(0U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0x0ABCD000U == result.data[7]);
+
+  result = uint256_rotate_right(objs->rot, 16);
+  ASSERT(0U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0x00ABCD00U == result.data[7]);
+
+  result = uint256_rotate_right(objs->rot, 32);
+  ASSERT(0U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0xCD000000U == result.data[6]);
+  ASSERT(0x000000ABU == result.data[7]);
+
+  // testing over 256
+  result = uint256_rotate_right(objs->rot, 4+256);
+  ASSERT(0x0000000AU == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0U == result.data[6]);
+  ASSERT(0xBCD00000U == result.data[7]);
+
+  result = uint256_rotate_right(objs->rot, 32+256);
+  ASSERT(0U == result.data[0]);
+  ASSERT(0U == result.data[1]);
+  ASSERT(0U == result.data[2]);
+  ASSERT(0U == result.data[3]);
+  ASSERT(0U == result.data[4]);
+  ASSERT(0U == result.data[5]);
+  ASSERT(0xCD000000U == result.data[6]);
+  ASSERT(0x000000ABU == result.data[7]);
+
 }
