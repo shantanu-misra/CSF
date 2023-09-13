@@ -241,12 +241,23 @@ void test_add(TestObjs *objs) {
   result = uint256_add(objs->one, objs->one);
   ASSERT_SAME(two, result);
 
-  // custom addition test case to add 0 to a number
+  // basic custom tests for addition
   result = uint256_add(two, objs->zero);
   ASSERT_SAME(two, result);
 
   result = uint256_add(objs->max, objs->one);
   ASSERT_SAME(objs->zero, result);
+
+  UInt256 a = uint256_create_from_hex("a");
+  result = uint256_add(a, a);
+  ASSERT_SAME(uint256_create_from_hex("14"), result);
+
+  UInt256 abcd = uint256_create_from_hex("abcd");
+  UInt256 cdef = uint256_create_from_hex("cdef");
+  result = uint256_add(abcd, cdef);
+  ASSERT_SAME(uint256_create_from_hex("179BC"), result);
+
+
 }
 
 void test_sub(TestObjs *objs) {
@@ -260,6 +271,20 @@ void test_sub(TestObjs *objs) {
 
   result = uint256_sub(objs->zero, objs->one);
   ASSERT_SAME(objs->max, result);
+
+  // some basic custom subtraction tests
+  UInt256 three = uint256_create_from_hex("3");
+  result = uint256_sub(three, three);
+  ASSERT_SAME(objs->zero, result);
+
+  UInt256 abc = uint256_create_from_hex("ABC");
+  result = uint256_sub(abc, abc);
+  ASSERT_SAME(objs->zero, result);
+
+  UInt256 two = uint256_create_from_hex("2");
+  result = uint256_sub(three, two);
+  ASSERT_SAME(objs->one, result);
+
 }
 
 void test_negate(TestObjs *objs) {
@@ -273,6 +298,8 @@ void test_negate(TestObjs *objs) {
 
   result = uint256_negate(objs->max);
   ASSERT_SAME(objs->one, result);
+
+  // tests kind of completed when testing subtraction
 }
 
 void test_rotate_left(TestObjs *objs) {
