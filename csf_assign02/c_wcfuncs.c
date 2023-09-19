@@ -21,8 +21,21 @@
 // Note that the character values should be treated as
 // being unsigned (in the range 0..255)
 uint32_t wc_hash(const unsigned char *w) {
-  // TODO: implement
+  uint32_t hash_code = 5381;
+  const unsigned char *ptr = w;
+
+  // loop that will go on until it encounters a null character in the string
+  while (*ptr) {
+    // update the hash code according to the algorithm
+    hash_code = hash_code * 33 + *ptr;
+
+    // move to the next character in the string
+    ptr++;
+  }
+
+  return hash_code;
 }
+
 
 // Compare two strings lexicographically. Return
 //
@@ -35,12 +48,28 @@ uint32_t wc_hash(const unsigned char *w) {
 // of the other, it is considered as "less than". E.g.,
 // "hi" would compare as less than "high".
 int wc_str_compare(const unsigned char *lhs, const unsigned char *rhs) {
-  // TODO: implement
+
+  // iterate through each character of both strings until
+  // either the left sting ends or first unequal pair of characters is found
+  while (*lhs && (*lhs == *rhs)) {
+    lhs++;
+    rhs++;
+  }
+
+  // return the difference between the ASCII characters
+  return *(const unsigned char *)lhs - *(const unsigned char *)rhs;
 }
 
 // Copy NUL-terminated source string to the destination buffer.
 void wc_str_copy(unsigned char *dest, const unsigned char *source) {
-  // TODO: implement
+  int  i = 0;
+  // iterate through source string
+  for (i = 0; source[i] != '\0'; i++) {
+    // copy the current character from the source string to the destination string
+    dest[i] = source[i];
+  }
+  // null terminate the destination string
+  dest[i] = '\0';
 }
 
 // Return 1 if the character code in c is a whitespace character,
@@ -55,13 +84,22 @@ void wc_str_copy(unsigned char *dest, const unsigned char *source) {
 //   '\f'
 //   '\v'
 int wc_isspace(unsigned char c) {
-  // TODO: implement
+  if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f' || c == '\v') {
+    return 1;
+  } 
+  else {
+    return 0;
+  }
 }
 
 // Return 1 if the character code in c is an alphabetic character
 // ('A' through 'Z' or 'a' through 'z'), 0 otherwise.
 int wc_isalpha(unsigned char c) {
-  // TODO: implement
+  if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+    return 1;
+  } else {
+    return 0;
+  }
 }
 
 // Read the next word from given input stream, storing
@@ -82,7 +120,14 @@ int wc_readnext(FILE *in, unsigned char *w) {
 // Convert the NUL-terminated character string in the array
 // pointed-to by w so that every letter is lower-case.
 void wc_tolower(unsigned char *w) {
-  // TODO: implement
+  // start a loop that will go on until it encounters a null character in the string
+  for (int i = 0; w[i] != '\0'; i++) {
+    // check if the current character is an uppercase alphabetic character
+    if (w[i] >= 'A' && w[i] <= 'Z') {
+      // If it is, convert it to lowercase by adding the difference between 'A' and 'a' to it
+      w[i] = w[i] + ('a' - 'A');
+    }
+  }
 }
 
 // Remove any non-alphaabetic characters from the end of the
@@ -120,5 +165,16 @@ struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned n
 
 // Free all of the nodes in given linked list of WordEntry objects.
 void wc_free_chain(struct WordEntry *p) {
-  // TODO: implement
+  // start a loop that will go on until it encounters a null pointer in the linked list
+  while (p != NULL) {
+    // save the pointer to the next node before freeing the current node
+    struct WordEntry *nextNode = p->next;
+
+    // free the current node
+    free(p);
+
+    // move to the next node
+    p = nextNode;
+  }
 }
+
