@@ -114,7 +114,34 @@ int wc_isalpha(unsigned char c) {
 // MAX_WORDLEN characters, then only the first MAX_WORDLEN
 // characters in the sequence should be stored in the array.
 int wc_readnext(FILE *in, unsigned char *w) {
-  // TODO: implement
+  int i = 0;  // Index for the character being read
+  int c;      // Variable to hold the read character
+
+  // Skip leading whitespace characters
+  do {
+    c = fgetc(in);
+  } while (c != EOF && wc_isspace((unsigned char)c));
+
+  // If we encountered EOF or an error before finding a word, return 0
+  if (c == EOF) {
+    return 0;
+  }
+
+  // Read non-whitespace characters up to MAX_WORDLEN
+  while (c != EOF && !wc_isspace((unsigned char)c)) {
+    // Check if we have reached the maximum word length
+    if (i < MAX_WORDLEN) {
+      w[i++] = (unsigned char)c;
+    }
+    // Read the next character
+    c = fgetc(in);
+  }
+
+  // Null-terminate the word
+  w[i] = '\0';
+
+  // Return 1 to indicate that a word was successfully read
+  return 1;
 }
 
 // Convert the NUL-terminated character string in the array
@@ -133,7 +160,21 @@ void wc_tolower(unsigned char *w) {
 // Remove any non-alphaabetic characters from the end of the
 // NUL-terminated character string pointed-to by w.
 void wc_trim_non_alpha(unsigned char *w) {
-  // TODO: implement
+  int length = 0;  // Variable to store the length of the string
+
+  // Calculate the length of the string
+  while (w[length] != '\0') {
+    length++;
+  }
+
+  // Start from the end of the string and move towards the beginning
+  // Remove any non-alpha characters from the end of the string
+  while (length > 0 && !wc_isalpha(w[length - 1])) {
+    length--;
+  }
+
+  // Null-terminate the trimmed string
+  w[length] = '\0';
 }
 
 // Search the specified linked list of WordEntry objects for an object
