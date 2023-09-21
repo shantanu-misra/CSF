@@ -190,7 +190,52 @@ void wc_trim_non_alpha(unsigned char *w) {
 // the new node should have its count value set to 0. (It is the caller's
 // job to update the count.)
 struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted) {
-  // TODO: implement
+  // Initialize a pointer to traverse the linked list
+  struct WordEntry *current = head;
+  struct WordEntry *prev = NULL;
+
+  // Iterate through the linked list to find the matching entry or the appropriate insertion point
+  while (current != NULL) {
+    int cmp = wc_str_compare(s, current->word);
+
+    // If a matching entry is found, return it
+    if (cmp == 0) {
+      *inserted = 0; // Entry already exists
+      return current;
+    }
+    // If the current entry is greater than the search string, break the loop
+    else if (cmp < 0) {
+      break;
+    }
+
+    prev = current;
+    current = current->next;
+  }
+
+  // If we reach here, the entry does not exist, and we need to insert it
+  struct WordEntry *newEntry = (struct WordEntry *)malloc(sizeof(struct WordEntry));
+  if (newEntry == NULL) {
+    *inserted = -1; // Memory allocation failed
+    return NULL;
+  }
+
+  // Initialize the new entry
+  wc_str_copy(newEntry->word, s);
+  newEntry->count = 0;
+  newEntry->next = NULL;
+
+  // Insert the new entry into the linked list
+  if (prev == NULL) {
+    // Insert at the beginning of the list
+    newEntry->next = head; // Set the next pointer of newEntry
+    head = newEntry;
+  }
+  else {
+    prev->next = newEntry;
+  }
+
+*inserted = 1;
+return newEntry;
 }
 
 // Find or insert the WordEntry object for the given string (s), returning
@@ -218,4 +263,3 @@ void wc_free_chain(struct WordEntry *p) {
     p = nextNode;
   }
 }
-
