@@ -191,8 +191,7 @@ void wc_trim_non_alpha(unsigned char *w) {
 // job to update the count.)
 struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted) {
   // Initialize a pointer to traverse the linked list
-  struct WordEntry *current = head;
-  struct WordEntry *prev = NULL;
+  struct WordEntry* current = head;
 
   // Iterate through the linked list to find the matching entry or the appropriate insertion point
   while (current != NULL) {
@@ -203,12 +202,6 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
       *inserted = 0; // Entry already exists
       return current;
     }
-    // If the current entry is greater than the search string, break the loop
-    else if (cmp < 0) {
-      break;
-    }
-
-    prev = current;
     current = current->next;
   }
 
@@ -224,19 +217,13 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
   newEntry->count = 0;
   newEntry->next = NULL;
 
-  // Insert the new entry into the linked list
-  if (prev == NULL) {
-    // Insert at the beginning of the list
-    newEntry->next = head; // Set the next pointer of newEntry
-    head = newEntry;
-  }
-  else {
-    prev->next = newEntry;
-  }
+  // Insert New Node
+  newEntry->next = head;
 
-*inserted = 1;
-return newEntry;
+  *inserted = 1;
+  return newEntry; // Return the pointer to the new node
 }
+
 
 // Find or insert the WordEntry object for the given string (s), returning
 // a pointer to it. The head of the linked list which contains (or should
