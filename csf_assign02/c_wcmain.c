@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include "wcfuncs.h"
 
 // Suggested number of buckets for the hash table
@@ -15,7 +16,8 @@ int main(int argc, char **argv) {
   uint32_t best_word_count = 0;
 
   // Create an array of WordEntry pointers for the hash table (buckets)
-  struct WordEntry *buckets[HASHTABLE_SIZE] = { NULL };
+  // struct WordEntry *buckets[HASHTABLE_SIZE] = { NULL };
+  struct WordEntry** buckets = (struct WordEntry**)malloc(HASHTABLE_SIZE * sizeof(struct WordEntry*));
 
   // Check for the correct number of command-line arguments
   if (argc != 2) {
@@ -29,7 +31,7 @@ int main(int argc, char **argv) {
   // Check if the file was opened successfully
   if (in == NULL) {
     fprintf(stderr, "Error: Could not open file %s\n", argv[1]);
-    return 1;  // Return a non-zero exit code to indicate an error
+    return 1;  // Return a 1 to indicate an error
   }
 
   // Buffer to store the word read from the input
@@ -46,13 +48,13 @@ int main(int argc, char **argv) {
     // Find or insert the word in the hash table
     struct WordEntry *entry = wc_dict_find_or_insert(buckets, HASHTABLE_SIZE, word);
 
-    // Update the word count in the entry
-    entry->count++;
-
     // Check if this is a new unique word
-    if (entry->count == 1) {
+    if (entry->count == 0) {
       unique_words++;
     }
+
+    // Update the word count in the entry
+    entry->count++;
 
     // Check if this word has a higher count than the current best word
     if (entry->count > best_word_count || (entry->count == best_word_count && wc_str_compare(word, best_word) < 0)) {
@@ -64,12 +66,16 @@ int main(int argc, char **argv) {
   // Close the input file
   fclose(in);
 
-  // TODO: Free allocated memory for the WordEntry objects
-
   // Print the statistics
   printf("Total words read: %u\n", (unsigned int)total_words);
   printf("Unique words read: %u\n", (unsigned int)unique_words);
   printf("Most frequent word: %s (%u)\n", (const char *)best_word, best_word_count);
+
+  // TODO: Free allocated memory for the WordEntry objects
+  for (int i = 0; i < HASHTABLE_SIZE; i++) {
+    wc_free_chain(buckets[i]);
+  }
+  free(buckets);
 
   return 0;  // Return 0 to indicate success
 }

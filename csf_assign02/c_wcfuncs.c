@@ -209,6 +209,7 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
   struct WordEntry *newEntry = (struct WordEntry *)malloc(sizeof(struct WordEntry));
   if (newEntry == NULL) {
     *inserted = -1; // Memory allocation failed
+    free(newEntry); // Free the allocated memory
     return NULL;
   }
 
@@ -219,6 +220,7 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
 
   // Insert New Node
   newEntry->next = head;
+  head = newEntry;
 
   *inserted = 1;
   return newEntry; // Return the pointer to the new node
