@@ -233,7 +233,18 @@ struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char 
 // Returns a pointer to the WordEntry object in the appropriate linked list
 // which represents s.
 struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s) {
-  // TODO: implement
+  // Calculate the hash code for the string
+  uint32_t hash = wc_hash(s);
+
+  // Determine the bucket index by taking the hash modulo the number of buckets
+  unsigned index = hash % num_buckets;
+
+  // Search the linked list in the selected bucket for a matching entry
+  int inserted = 0; // This will be updated by wc_find_or_insert
+  buckets[index] = wc_find_or_insert(buckets[index], s, &inserted);
+
+  // Return the pointer to the WordEntry object in the appropriate linked list
+  return buckets[index];
 }
 
 // Free all of the nodes in given linked list of WordEntry objects.
