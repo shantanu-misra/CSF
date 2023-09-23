@@ -133,8 +133,30 @@ wc_isspace:
  */
 	.globl wc_isalpha
 wc_isalpha:
-	/* TODO: implement */
-	ret
+    /* rdi = unsigned char c (as this is the first integer/pointer argument) */
+
+    /* First, check if it's an uppercase letter */
+    cmpb   $'A', %dil          /* Compare the character with 'A' */
+    jl     .not_alpha          /* If less than 'A', not an alphabetic character */
+
+    cmpb   $'Z', %dil          /* Compare the character with 'Z' */
+    jle    .is_alpha           /* If less than or equal to 'Z', it's an uppercase alphabetic character */
+
+    /* Now, check if it's a lowercase letter */
+    cmpb   $'a', %dil          /* Compare the character with 'a' */
+    jl     .not_alpha          /* If less than 'a', not an alphabetic character */
+
+    cmpb   $'z', %dil          /* Compare the character with 'z' */
+    jg     .not_alpha          /* If greater than 'z', not an alphabetic character */
+
+.is_alpha:
+    mov    $1, %eax            /* Set return value to 1 (it's an alphabetic character) */
+    ret
+
+.not_alpha:
+    mov		$0, %eax       		/* Set return value to 0 (not an alphabetic character) */
+    ret
+
 
 /*
  * Read the next word from given input stream, storing
