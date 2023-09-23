@@ -57,8 +57,39 @@ wc_hash:
  */
 	.globl wc_str_compare
 wc_str_compare:
-	/* TODO: implement */
-	ret
+	/* Begin */
+	push   %rbp                /* Save old base pointer */
+	mov    %rbp, %rsp          /* Set new base pointer */
+
+.loop:
+	/* Load a byte from lhs into al register */
+	mov    (%rdi), %al         /* Load byte from address in rdi to al */
+
+	/* Load a byte from rhs into dl register */
+	mov    (%rsi), %dl         /* Load byte from address in rsi to dl */
+
+	/* Check if *lhs != *rhs */
+	cmp    %dl, %al            /* Compare dl and al */
+	jne    .done               /* If not equal, exit the loop */
+
+	/* Check if *lhs == 0, i.e., end of lhs string */
+	test   %al, %al            /* Test al against itself */
+	je     .done               /* If zero, exit the loop */
+
+	/* Move to the next characters */
+	inc    %rdi                /* Move to next byte of lhs */
+	inc    %rsi                /* Move to next byte of rhs */
+	jmp    .loop               /* Jump back to the start of the loop */
+
+.done:
+	/* Return *(const unsigned char *)lhs - *(const unsigned char *)rhs */
+	sub    %dl, %al            /* Subtract dl (rhs byte) from al (lhs byte) */
+	movzx  %al, %eax           /* Zero-extend al to eax for the return value */
+
+	/* end and clean */
+	leave                      /* Cleanup stack and restore base pointer */
+	ret                        /* Return with difference in eax */
+
 
 /*
  * Copy NUL-terminated source string to the destination buffer.
