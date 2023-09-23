@@ -312,7 +312,9 @@ void test_dict_find_or_insert(TestObjs *objs) {
   ASSERT(p->count == 0);
   ++p->count;
 
-  wc_free_chain(p);
+  for (int i = 0; i < 5; i++) {
+    wc_free_chain(dict[i]);
+  }
 }
 
 void test_free_chain(TestObjs *objs) {
