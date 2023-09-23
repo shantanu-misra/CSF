@@ -16,14 +16,23 @@ int main(int argc, char **argv) {
         buckets[i] = NULL;  // Initialize all bucket pointers to NULL
     }
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s input_file\n", argv[0]);
-        return 1;
-    }
+    FILE *in;
 
-    FILE *in = fopen(argv[1], "r");
-    if (in == NULL) {
-        fprintf(stderr, "Error: Could not open file %s\n", argv[1]);
+    if (argc == 1) {
+        // Read from stdin if no arguments provided
+        in = stdin;
+    } 
+    else if (argc == 2) {
+        in = fopen(argv[1], "r");
+        if (in == NULL) {
+            fprintf(stderr, "Error: Could not open file %s\n", argv[1]);
+            free(buckets);
+            return 1;
+        }
+    } 
+    else {
+        fprintf(stderr, "Usage: %s [input_file]\n", argv[0]);
+        free(buckets);
         return 1;
     }
 
