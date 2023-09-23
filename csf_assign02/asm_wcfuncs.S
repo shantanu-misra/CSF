@@ -89,8 +89,40 @@ wc_str_copy:
  */
 	.globl wc_isspace
 wc_isspace:
-	/* TODO: implement */
-	ret
+    /* rdi = unsigned char c (as this is the first integer/pointer argument) */
+
+    /* Compare c with ' ' */
+    cmpb $0x20, %dil         	/* Compare lower byte of rdi with ASCII for space */
+    je .is_space           		/* If equal, it's a whitespace */
+
+    /* Compare c with '\t' */
+    cmpb $0x09, %dil         	/* Compare with ASCII for tab */
+    je .is_space           		/* If equal, it's a whitespace */
+
+    /* Compare c with '\r' */
+    cmpb $0x0d, %dil         	/* Compare with ASCII for carriage return */
+    je .is_space           		/* If equal, it's a whitespace */
+
+    /* Compare c with '\n' */
+    cmpb $0x0a, %dil         	/* Compare with ASCII for newline */
+    je .is_space           		/* If equal, it's a whitespace */
+
+    /* Compare c with '\f' */
+    cmpb $0x0c, %dil         	/* Compare with ASCII for form feed */
+    je .is_space           		/* If equal, it's a whitespace */
+
+    /* Compare c with '\v' */
+    cmpb $0x0b, %dil         	/* Compare with ASCII for vertical tab */
+    je .is_space           		/* If equal, it's a whitespace */
+
+    /* Not a whitespace character */
+    mov	$0, %eax          		/* Set return value to 0 */
+    ret
+
+.is_space:
+    /* It's a whitespace character */
+    mov $1, %eax            	/* Set return value to 1 */
+    ret
 
 /*
  * Return 1 if the character code in c is an alphabetic character
