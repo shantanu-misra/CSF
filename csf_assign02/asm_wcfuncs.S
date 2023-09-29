@@ -19,6 +19,7 @@
 	.section .text
 
 /*
+ * Sebastian Rincon
  * Compute a hash code for the given NUL-terminated
  * character string.
  *
@@ -235,6 +236,11 @@ wc_trim_non_alpha:
 	ret
 
 /*
+
+
+
+
+ * Sebastian Rincon
  * Search the specified linked list of WordEntry objects for an object
  * containing the specified string.
  *
@@ -257,6 +263,7 @@ wc_find_or_insert:
 	ret
 
 /*
+ * Sebastian Rincon
  * Find or insert the WordEntry object for the given string (s), returning
  * a pointer to it. The head of the linked list which contains (or should
  * contain) the entry for s is the element of buckets whose index is the
@@ -274,6 +281,7 @@ wc_dict_find_or_insert:
 	ret
 
 /*
+ * Sebastian Rincon
  * Free all of the nodes in given linked list of WordEntry objects.
  *
  * C function prototype:
