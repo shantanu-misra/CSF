@@ -38,8 +38,20 @@
  */
 	.globl wc_hash
 wc_hash:
-	/* TODO: implement */
-	ret
+	subq $8, %rsp
+	movl $5381, %eax  /* make rax the hashcode 5381*/
+	movb $0, %r10b /*instantiates the local variable for byte to 0*/
+	.Lmain_loop:
+		movzbl (%edi), %r10d /* load char from edi into r10d */
+		testb %r10b, %r10b /*check char with itself to see if it is null*/
+		jz .Ldone   /*jump to end to return hashcode*/
+		imull $33, %eax /* unsinged multiplication of eax with 33 into eax */
+		addl %r10d, %eax  /* adds the unsinged char value to eax*/
+		incb %dil /*incraments pointer of string to next byte*/
+		jmp .Lmain_loop /*jumps back to the beginning of the loop*/
+	.Ldone:
+		addq $8, %rsp  /* realligns stack pointer*/
+		ret  /* return eax */
 
 /*
  * Compare two strings lexicographically. Return
