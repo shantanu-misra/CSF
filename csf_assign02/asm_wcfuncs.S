@@ -242,39 +242,29 @@ wc_readnext:
  *    void wc_tolower(unsigned char *w);
  */
 	.globl wc_tolower
-wc_tolower:
-	/* Entry */
-	push   %rbp                /* Save old base pointer */
-	mov    %rbp, %rsp          /* Set new base pointer */
+str_tolower:
+	subq $8, %rsp
 
-.convert_loop:
-	/* Load a byte from the string into al register */
-	mov    (%rdi), %al         /* Load byte from address in rdi to al */
+.Lstr_tolower_loop:
+	movb (%rdi), %al
+	cmpb $0, %al
+	je .Lstr_tolower_done
 
-	/* Check if we have hit the NUL terminator */
-	test   %al, %al            /* Test al against itself */
-	je     .end_conversion     /* If zero (NUL terminator), exit the loop */
+	cmpb $65, %al
+	jb .Lstr_tolower_loop_continue
+	cmpb $90, %al
+	ja .Lstr_tolower_loop_continue
 
-	/* Check if the character is an uppercase letter */
-	cmp    $'A', %al           /* Compare the character with 'A' */
-	jl     .not_uppercase      /* If less than 'A', not an uppercase letter */
+	addb $(97 - 65), %al
+	movb %al, (%rdi)
 
-	cmp    $'Z', %al           /* Compare the character with 'Z' */
-	jg     .not_uppercase      /* If greater than 'Z', not an uppercase letter */
+.Lstr_tolower_loop_continue:
+	incq %rdi
+	jmp .Lstr_tolower_loop
 
-	/* Convert uppercase to lowercase */
-	add    $32, %al            /* Add 32 to the character value */
-	mov    %al, (%rdi)         /* Store the converted character back into the string */
-
-.not_uppercase:
-	/* Move to the next character */
-	inc    %rdi                /* Move to next byte of the string */
-	jmp    .convert_loop       /* Jump back to the start of the loop */
-
-.end_conversion:
-	leave                      /* Cleanup stack and restore base pointer */
-	ret                        /* Return */
-
+.Lstr_tolower_done:
+	addq $8, %rsp
+	ret
 
 /*
  * Remove any non-alphaabetic characters from the end of the
