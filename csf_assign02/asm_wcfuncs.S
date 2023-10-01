@@ -243,44 +243,62 @@ wc_isalpha:
 
 	.globl wc_readnext
 wc_readnext:
-    subq $16, %rsp                      /* Align stack */
+    pushq %rbp
+    movq %rsp, %rbp
+    pushq %rbx
+    pushq %r12
+    pushq %r13
+    subq $32, %rsp             /* Align stack */
 
-    movq %rsi, %rdx                     /* rdx points to the output buffer w */
-    movl $1, %ecx                       /* Read one byte at a time */
+    movq %rsi, %r13            /* Initialize r13 with the address of the buffer */
+    xorq %r12, %r12            /* r12 will be our index 'i' */
+    movq %rdi, %rbx            /* rbx will hold our FILE* 'in' */
 
-.start_read:
-    call read                           /* Read one byte from the file */
-    test %rax, %rax                     /* Check if end-of-file or error */
-    jz .end_no_word
+.skip_whitespace:
+    movq %rbx, %rdi            /* Restore FILE* in to rdi for fgetc */
+    call fgetc
+    cmp $-1, %eax              /* Check for EOF */
+    je .end_no_word
+    mov %al, %sil
+    mov %rsi, %rdi             /* Move the character to rdi for wc_isspace call */
+    call wc_isspace
+    test %eax, %eax            /* If it's a whitespace, loop again */
+    jnz .skip_whitespace
 
-    cmpb $0, (%rdx)                     /* Check if we've reached MAX_WORDLEN */
-    je .end_word
+.read_word:
+    cmpq $MAX_WORDLEN, %r12    /* Check if buffer is full */
+    je .terminate_word
+    movb %sil, (%r13)         /* Store character into buffer */
+    incq %r12                  /* Increment index */
+    incq %r13                  /* Move to next buffer position */
+    movq %rbx, %rdi            /* Restore FILE* in to rdi for fgetc */
+    call fgetc                 /* Read next character */
+    cmp $-1, %eax              /* Check for EOF */
+    je .terminate_word
+    mov %al, %sil
+    mov %rsi, %rdi            /* Move the character to rdi for wc_isspace call */
+    call wc_isspace
+    test %eax, %eax            /* If it's not whitespace, loop */
+    jz .read_word
 
-    call isspace                        /* Check if it's a whitespace */
-    test %al, %al                       /* If whitespace */
-    jnz .start_read
-
-.store_word:
-    movb (%rdi), %al                    /* Move byte from file to w */
-    movb %al, (%rdx)                    /* Store byte in w */
-    incq %rdx                           /* Move to next position in w */
-    cmpb $0, (%rdx)                     /* Check if we've reached MAX_WORDLEN */
-    je .end_word
-
-    jmp .start_read
-
-.end_word:
-    movb $0, (%rdx)                     /* Null-terminate the string */
-    movl $1, %eax                       /* Set return value to 1 */
-    addq $16, %rsp                      /* Realign stack */
+.terminate_word:
+    movb $0, (%r13)           /* Null-terminate the buffer */
+    movl $1, %eax             /* Return 1 */
+    addq $32, %rsp
+    popq %r13
+    popq %r12
+    popq %rbx
+    popq %rbp
     ret
 
 .end_no_word:
-    movb $0, (%rdx)                     /* Null-terminate the string */
-    xorl %eax, %eax                     /* Set return value to 0 */
-    addq $16, %rsp                      /* Realign stack */
+    movl $0, %eax             /* Return 0 */
+    addq $32, %rsp
+    popq %r13
+    popq %r12
+    popq %rbx
+    popq %rbp
     ret
-
 
 /*
  * Convert the NUL-terminated character string in the array
