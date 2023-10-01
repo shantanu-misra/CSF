@@ -38,20 +38,8 @@
  */
 	.globl wc_hash
 wc_hash:
-	subq $8, %rsp
-	movl $5381, %eax  /* make rax the hashcode 5381*/
-	movb $0, %r10b /*instantiates the local variable for byte to 0*/
-	.Lmain_loop:
-		movzbl (%edi), %r10d /* load char from edi into r10d */
-		testb %r10b, %r10b /*check char with itself to see if it is null*/
-		jz .Ldone   /*jump to end to return hashcode*/
-		imull $33, %eax /* unsinged multiplication of eax with 33 into eax */
-		addl %r10d, %eax  /* adds the unsinged char value to eax*/
-		incb %dil /*incraments pointer of string to next byte*/
-		jmp .Lmain_loop /*jumps back to the beginning of the loop*/
-	.Ldone:
-		addq $8, %rsp  /* realligns stack pointer*/
-		ret  /* return eax */
+	/* TODO: implement */
+	ret
 
 /*
  * Compare two strings lexicographically. Return
@@ -254,28 +242,28 @@ wc_readnext:
  *    void wc_tolower(unsigned char *w);
  */
 	.globl wc_tolower
-str_tolower:
-	subq $8, %rsp
+wc_tolower:
+	subq $8, %rsp			 /* Align stack */
 
 .Lstr_tolower_loop:
-	movb (%rdi), %al
-	cmpb $0, %al
-	je .Lstr_tolower_done
+	movb (%rdi), %al		/* Get character */
+	cmpb $0, %al			/* Ais character /0? */
+	je .Lstr_tolower_done	/* If yes, strting over */
 
-	cmpb $65, %al
-	jb .Lstr_tolower_loop_continue
-	cmpb $90, %al
-	ja .Lstr_tolower_loop_continue
+	cmpb $65, %al			/* Is character value below 65? */
+	jb .Lstr_tolower_loop_continue /* If yes, not a uppercase character */
+	cmpb $90, %al			/* Is character value above 90? */
+	ja .Lstr_tolower_loop_continue /* If yes, not a uppercase character */
 
-	addb $(97 - 65), %al
-	movb %al, (%rdi)
+	addb $(97 - 65), %al		/* Add difference to character */
+	movb %al, (%rdi)			/* Move modified character back to string */
 
 .Lstr_tolower_loop_continue:
-	incq %rdi
-	jmp .Lstr_tolower_loop
+	incq %rdi					/* Move ahead in string */
+	jmp .Lstr_tolower_loop		/* Continue loop */
 
 .Lstr_tolower_done:
-	addq $8, %rsp
+	addq $8, %rsp			/* Realign stack */
 	ret
 
 /*
