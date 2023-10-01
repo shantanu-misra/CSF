@@ -38,8 +38,20 @@
  */
 	.globl wc_hash
 wc_hash:
-	/* TODO: implement */
-	ret
+	subq $8, %rsp
+	movl $5381, %eax  /* make rax the hashcode 5381*/
+	movb $0, %r10b /*instantiates the local variable for byte to 0*/
+	.Lmain_loop:
+		movzbl (%edi), %r10d /* load char from edi into r10d */
+		testb %r10b, %r10b /*check char with itself to see if it is null*/
+		jz .Ldone   /*jump to end to return hashcode*/
+		imull $33, %eax /* unsinged multiplication of eax with 33 into eax */
+		addl %r10d, %eax  /* adds the unsinged char value to eax*/
+		incb %dil /*incraments pointer of string to next byte*/
+		jmp .Lmain_loop /*jumps back to the beginning of the loop*/
+	.Ldone:
+		addq $8, %rsp  /* realligns stack pointer*/
+		ret  /* return eax */
 
 /*
  * Compare two strings lexicographically. Return
@@ -231,8 +243,44 @@ wc_isalpha:
 
 	.globl wc_readnext
 wc_readnext:
-	/* TODO: implement */
-	ret
+    subq $16, %rsp                      /* Align stack */
+
+    movq %rsi, %rdx                     /* rdx points to the output buffer w */
+    movl $1, %ecx                       /* Read one byte at a time */
+
+.start_read:
+    call read                           /* Read one byte from the file */
+    test %rax, %rax                     /* Check if end-of-file or error */
+    jz .end_no_word
+
+    cmpb $0, (%rdx)                     /* Check if we've reached MAX_WORDLEN */
+    je .end_word
+
+    call isspace                        /* Check if it's a whitespace */
+    test %al, %al                       /* If whitespace */
+    jnz .start_read
+
+.store_word:
+    movb (%rdi), %al                    /* Move byte from file to w */
+    movb %al, (%rdx)                    /* Store byte in w */
+    incq %rdx                           /* Move to next position in w */
+    cmpb $0, (%rdx)                     /* Check if we've reached MAX_WORDLEN */
+    je .end_word
+
+    jmp .start_read
+
+.end_word:
+    movb $0, (%rdx)                     /* Null-terminate the string */
+    movl $1, %eax                       /* Set return value to 1 */
+    addq $16, %rsp                      /* Realign stack */
+    ret
+
+.end_no_word:
+    movb $0, (%rdx)                     /* Null-terminate the string */
+    xorl %eax, %eax                     /* Set return value to 0 */
+    addq $16, %rsp                      /* Realign stack */
+    ret
+
 
 /*
  * Convert the NUL-terminated character string in the array
