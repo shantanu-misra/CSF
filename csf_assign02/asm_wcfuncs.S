@@ -71,37 +71,32 @@ wc_hash:
 	.globl wc_str_compare
 wc_str_compare:
 	/* Begin */
-	push   %rbp                /* Save old base pointer */
-	mov    %rbp, %rsp          /* Set new base pointer */
+	push   %rbp  /* Save old base pointer */
+	mov    %rbp, %rsp  /* Set new base pointer */
 
-.loop:
-	/* Load a byte from lhs into al register */
-	mov    (%rdi), %al         /* Load byte from address in rdi to al */
+.Lcompreloop:
+	mov    (%rdi), %al /* Load byte from address in rdi to al */
 
-	/* Load a byte from rhs into dl register */
-	mov    (%rsi), %dl         /* Load byte from address in rsi to dl */
+	mov    (%rsi), %dl /* Load byte from address in rsi to dl */
 
-	/* Check if *lhs != *rhs */
-	cmp    %dl, %al            /* Compare dl and al */
-	jne    .doneCompare               /* If not equal, exit the loop */
+	cmp    %dl, %al   /* are two chars equal? */
+	jne    .doneCompare  /* If no, exit the loop */
 
-	/* Check if *lhs == 0, i.e., end of lhs string */
-	test   %al, %al            /* Test al against itself */
-	je     .doneCompare               /* If zero, exit the loop */
+	test   %al, %al            /* is al null?*/
+	je     .doneCompare  /* If yes, exit the loop */
 
 	/* Move to the next characters */
-	inc    %rdi                /* Move to next byte of lhs */
-	inc    %rsi                /* Move to next byte of rhs */
-	jmp    .loop               /* Jump back to the start of the loop */
+	inc    %rdi     /* Move to next byte of lhs */
+	inc    %rsi     /* Move to next byte of rhs */
+	jmp    .Lcompreloop   /* continue loop */
 
 .doneCompare:
-	/* Return *(const unsigned char *)lhs - *(const unsigned char *)rhs */
-	sub    %dl, %al            /* Subtract dl (rhs byte) from al (lhs byte) */
-	movzx  %al, %eax           /* Zero-extend al to eax for the return value */
+	sub    %dl, %al  /* Subtract dl (rhs byte) from al (lhs byte) */
+	movzx  %al, %eax    /* Zero-extend al to eax for the return value */
 
 	/* end and clean */
-	leave                      /* Cleanup stack and restore base pointer */
-	ret                        /* Return with difference in eax */
+	leave    /* cleanup */
+	ret   /* Return with difference in eax */
 
 
 /*
@@ -110,32 +105,28 @@ wc_str_compare:
  * C function prototype:
  *    void wc_str_copy(unsigned char *dest, const unsigned char *source);
  */
-	.globl wc_str_copy
+    .globl wc_str_copy
 wc_str_copy:
-	/* Entry */
-	push   %rbp                /* Save old base pointer */
-	mov    %rbp, %rsp          /* Set new base pointer */
+	pushq  %rbp    /* Save old base pointer */
+	movq   %rsp, %rbp   /* Set new base pointer */
 
-	/* Begin copying loop */
 .copy_loop:
-	/* Load a byte from source into al register */
-	mov    (%rsi), %al         /* Load byte from address in rsi (source) to al */
+	movb   (%rsi), %al  /* Load byte from address in rsi (source) to al */
 
 	/* Store the byte in destination */
-	mov    %al, (%rdi)         /* Store byte from al to address in rdi (destination) */
+	movb   %al, (%rdi)  /* Store byte from al to address in rdi (destination) */
 
-	/* Check if we have hit the NUL terminator */
-	test   %al, %al            /* Test al against itself */
-	je     .end_copy           /* If zero (NUL terminator), exit the loop */
+	testb  %al, %al   /* is al null? */
+	je     .end_copy   /* If yes, exit the loop */
 
 	/* Move to the next characters */
-	inc    %rdi                /* Move to next byte of destination */
-	inc    %rsi                /* Move to next byte of source */
-	jmp    .copy_loop          /* Jump back to the start of the loop */
+	incq   %rdi     /* Move to next byte of destination */
+	incq   %rsi   /* Move to next byte of source */
+	jmp    .copy_loop          /* continue loop */
 
 .end_copy:
-	leave                      /* Cleanup stack and restore base pointer */
-	ret                        /* Return */
+	leave /* Cleanup */
+	ret  
 
 /*
  * Return 1 if the character code in c is a whitespace character,
@@ -158,28 +149,28 @@ wc_isspace:
     /* rdi = unsigned char c (as this is the first integer/pointer argument) */
 
     /* Compare c with ' ' */
-    cmpb $0x20, %dil         	/* Compare lower byte of rdi with ASCII for space */
-    je .is_space           		/* If equal, it's a whitespace */
+    cmpb $0x20, %dil         	/* is char space? */
+    je .is_space           		/* If yes, it's a whitespace */
 
     /* Compare c with '\t' */
-    cmpb $0x09, %dil         	/* Compare with ASCII for tab */
-    je .is_space           		/* If equal, it's a whitespace */
+    cmpb $0x09, %dil         	/* ic char tab? */
+    je .is_space           		/* If yes, it's a whitespace */
 
     /* Compare c with '\r' */
-    cmpb $0x0d, %dil         	/* Compare with ASCII for carriage return */
-    je .is_space           		/* If equal, it's a whitespace */
+    cmpb $0x0d, %dil         	/* is char return? */
+    je .is_space           		/* If yes, it's a whitespace */
 
     /* Compare c with '\n' */
-    cmpb $0x0a, %dil         	/* Compare with ASCII for newline */
-    je .is_space           		/* If equal, it's a whitespace */
+    cmpb $0x0a, %dil         	/* is char newline? */
+    je .is_space           		/* If yes, it's a whitespace */
 
     /* Compare c with '\f' */
-    cmpb $0x0c, %dil         	/* Compare with ASCII for form feed */
-    je .is_space           		/* If equal, it's a whitespace */
+    cmpb $0x0c, %dil         	/* is char feed? */
+    je .is_space           		/* If yes, it's a whitespace */
 
     /* Compare c with '\v' */
-    cmpb $0x0b, %dil         	/* Compare with ASCII for vertical tab */
-    je .is_space           		/* If equal, it's a whitespace */
+    cmpb $0x0b, %dil         	/* is char vertical tab? */
+    je .is_space           		/* If yes, it's a whitespace */
 
     /* Not a whitespace character */
     mov	$0, %eax          		/* Set return value to 0 */
@@ -341,39 +332,44 @@ wc_tolower:
  */
     .globl wc_trim_non_alpha
 wc_trim_non_alpha:
-    /* Entry */
-    push   %rbp                /* Save old base pointer */
-    mov    %rbp, %rsp          /* Set new base pointer */
-    push   %rdi                /* Save the original string pointer */
+    // Prologue
+    pushq %rbp /* Save old base pointer */
+    movq  %rsp, %rbp /* Set new base pointer */
+    subq  $16, %rsp  /* Reserve space for local variable 'length' */
+    movq  %rdi, -16(%rbp) /* Save the pointer w */
+    movl  $0, -8(%rbp) /* Initialize length to 0 */
 
-.find_end:
-    /* Move to the end of the string */
-    cmpb   $0, (%rdi)          /* Check for NUL terminator */
-    je     .trim               /* If found, start trimming */
-    inc    %rdi                /* Move to next character */
-    jmp    .find_end           /* Loop until NUL terminator is found */
+.Lcalculate_length:
+    movl  -8(%rbp), %eax /* Load length into eax */
+    movq  -16(%rbp), %rdx /* Load w into rdx */
+    movzbl (%rdx,%rax), %ecx /* Load w[length] into ecx */
+    testb %cl, %cl /* is cl (NUL)? */
+    je    .Ltrim /* If yes, trim */
+    incl  -8(%rbp) /* Increment length */
+    jmp   .Lcalculate_length /* continue loop */
 
-.trim:
-    dec    %rdi                /* Move one character back from the NUL terminator */
+.Ltrim:
+.Ltrim_loop:
+    cmpl  $0, -8(%rbp) /* is length <= 0? */
+    jle   .Lset_null /* If yes, set null terminator */
+    movl  -8(%rbp), %eax /* Load length into eax */
+    decq  %rax /* Decrement to get w[length - 1] */
+    movq  -16(%rbp), %rdx   /* Load pointer w into rdx */
+    movzbl (%rdx,%rax), %ecx /* Load w[length - 1] into ecx */
+    movb  %cl, %dil     /* Move the byte to dil (byte register) */
+    call  wc_isalpha /* Call wc_isalpha */
+    testb %al, %al  /* is character null? */
+    jnz   .Lset_null /* If no, set null terminator */
+    decl  -8(%rbp)   /* Decrement length */
+    jmp   .Ltrim_loop   /* continue loop */
 
-.check_alpha:
-    mov    (%rdi), %al         /* Load the current character into al */
+.Lset_null:
+    movl  -8(%rbp), %eax   /* Load length into eax */
+    movq  -16(%rbp), %rdx  /* Load w into rdx */
+    movb  $0, (%rdx,%rax)  /* Set w[length] to '\0' (null terminator) */
 
-    call   wc_isalpha          /* Call the wc_isalpha function */
-    
-    test   %al, %al            /* Test the result of wc_isalpha */
-    jnz    .end                /* If non-zero, it's an alphabetic character, so we're done */
-
-    /* If not alphabetic, set to NUL terminator */
-    movb   $0, (%rdi)          /* Replace with NUL terminator */
-    dec    %rdi                /* Move to previous character */
-    jmp    .check_alpha        /* Check the previous character */
-
-.end:
-    pop    %rdi                /* Restore the original string pointer */
-    leave                      /* Cleanup stack and restore base pointer */
-    ret                        /* Return */
-
+    leave     /* cleanup */
+    ret
 
 /*
 
