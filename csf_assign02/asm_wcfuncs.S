@@ -399,8 +399,76 @@ wc_trim_non_alpha:
  */
 	.globl wc_find_or_insert
 wc_find_or_insert:
-	/* TODO: implement */
-	ret
+wc_find_or_insert:
+    movq %rdi, %r10            # Copy head to current (current = head)
+    movq %rsi, %r11            # Copy s to rcx (s = rcx)
+    movq %rdx, %r15            # Copy inserted to rdi (inserted = rdi)
+    pushq %rbp
+    movq %rbp, %rsp
+    pushq %r15
+    pushq %r11
+    pushq %r10
+
+.Lsearch_loop:
+    pop %r10
+    movq %r10, %r8
+    pushq %r10
+    cmpq $0, %r8              # Check if current is NULL
+    je .Linsert_new_node
+
+    pop %r10
+    pop %r11
+    pop %r15
+    movq %r15, %rdx        # Load &current->word into rdx (word pointer)
+    # pushq %rax                 # Save current on the stack
+    movq %r11, %rdi
+    movq %r15, %rsi
+    pushq %r15
+    pushq %r11
+    pushq %r10
+    call wc_str_compare        # Call wc_str_compare(lhs, rhs)
+
+     addq $8, %rsp              # Pop the current from the stack
+
+    testq %rax, %rax           # Check if wc_str_compare result is 0
+    jz .Lfound_match
+
+    pop %r10
+    movq 72(%r10), %r10        # Move to the next node (current = current->next)
+    pushq %r10
+    jmp .Lsearch_loop
+
+.Lfound_match:
+    movl $0, (%rdi)            # Set inserted to 0 (matching object found)
+    movq %rax, %rax            # Return the pointer to the matching node
+    ret
+
+.Linsert_new_node:
+    popq %r10
+    popq %r11
+    popq %r15
+    # Allocate memory for the new WordEntry object
+    subq $80, %rsp
+    movq %rsp, %rax
+    
+    /*movq $80, %rdi             # Size of WordEntry struct (80 bytes)
+    call malloc                # Call malloc to allocate memory
+    testq %rax, %rax           # Check if malloc failed
+    jz malloc_failed*/
+
+    movq %r11, 0(%rax)          # Copy the string 's' into word
+    movl $0, 64(%rax)          # Initialize count to 0
+    movq %r10, 72(%rax)        # Set next to point to the current head
+    movq $1, %r15            # Set inserted to 1 (new object inserted)
+    addq $80, %rsp
+    popq %rbp
+    ret
+
+malloc_failed:
+    movl $-1, (%rdi)           # Set inserted to -1 (malloc failure)
+    xorq %rax, %rax            # Return NULL
+    ret
+
 
 /*
  * Sebastian Rincon
@@ -417,8 +485,59 @@ wc_find_or_insert:
  */
 	.globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
-	/* TODO: implement */
-	ret
+    movq %rdi, %r12 # loads hashtable to r12
+    movq %rsi, %r13 # loads number of buckets to r13
+    movq %rdx, %r14 # loads string to look/insert to r14
+
+    pushq %r14 # pushes string into stack
+    pushq %r13 # pushes num buckets into stack
+    pushq %r12 # pushes hashtable to stack
+
+    movq %r14, %rdi # sets parameter to the string
+    call wc_hash # calls hashfunction to get hash number from string
+    popq %r12
+    popq %r13
+    movq %r13, %rcx # move numbukets to to r9 to be divosor
+    xorq %rdx, %rdx
+    divq %rcx # divide rax by rx, result is in rax, remainder in rdx
+    movq %rdx, %r8 # move remainder value to r8
+    pop %r14 # pops string
+    movq %r14, %rsi # sets string as 2nd parameter
+    leaq 0(%r12, %r8, 8), %r10 # finds address of start of linked list
+    movq (%r10), %rdi # sets headofLink list as parameter 1
+    movq $0, %r9
+    movq %r9, %rdx
+
+    pushq %r14
+    pushq %r13
+    pushq %r12
+    pushq %r8
+    pushq %rdx
+
+    call wc_find_or_insert
+
+    popq %rdx
+    push %rax
+    movq %rdx, %r10
+    cmpq $1, %r10
+    je .Lupdate_head
+    pop %rax
+    popq %r8
+    popq %r12
+    popq %r13
+    popq %r14
+    ret
+
+.Lupdate_head:
+    pop %rax
+    popq %r8
+    popq %r12
+    popq %r13
+    popq %r14
+    leaq (%r12, %r8, 8), %r9
+    movq %r12 , %r9
+    ret
+
 
 /*
  * Sebastian Rincon
