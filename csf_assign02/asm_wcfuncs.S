@@ -239,42 +239,42 @@ wc_readnext:
     pushq %rbx
     pushq %r12
     pushq %r13
-    subq $32, %rsp             /* Align stack */
+    subq $32, %rsp /* Align stack */
 
-    movq %rsi, %r13            /* Initialize r13 with the address of the buffer */
-    xorq %r12, %r12            /* r12 will be our index 'i' */
-    movq %rdi, %rbx            /* rbx will hold our FILE* 'in' */
+    movq %rsi, %r13 /* Initialize r13 with the address of the buffer */
+    xorq %r12, %r12 /* r12 will be our index 'i' */
+    movq %rdi, %rbx /* rbx will hold our FILE* 'in' */
 
 .skip_whitespace:
-    movq %rbx, %rdi            /* Restore FILE* in to rdi for fgetc */
+    movq %rbx, %rdi /* Restore FILE* in to rdi for fgetc */
     call fgetc
-    cmp $-1, %eax              /* Check for EOF */
+    cmp $-1, %eax /* Check for EOF */
     je .end_no_word
     mov %al, %sil
-    mov %rsi, %rdi             /* Move the character to rdi for wc_isspace call */
+    mov %rsi, %rdi /* Move the character to rdi for wc_isspace call */
     call wc_isspace
-    test %eax, %eax            /* If it's a whitespace, loop again */
+    test %eax, %eax /* If it's a whitespace, loop again */
     jnz .skip_whitespace
 
 .read_word:
     cmpq $MAX_WORDLEN, %r12    /* Check if buffer is full */
     je .terminate_word
-    movb %sil, (%r13)         /* Store character into buffer */
-    incq %r12                  /* Increment index */
-    incq %r13                  /* Move to next buffer position */
-    movq %rbx, %rdi            /* Restore FILE* in to rdi for fgetc */
-    call fgetc                 /* Read next character */
-    cmp $-1, %eax              /* Check for EOF */
+    movb %sil, (%r13) /* Store character into buffer */
+    incq %r12 /* Increment index */
+    incq %r13 /* Move to next buffer position */
+    movq %rbx, %rdi /* Restore FILE* in to rdi for fgetc */
+    call fgetc /* Read next character */
+    cmp $-1, %eax /* Check for EOF */
     je .terminate_word
     mov %al, %sil
-    mov %rsi, %rdi            /* Move the character to rdi for wc_isspace call */
+    mov %rsi, %rdi /* Move the character to rdi for wc_isspace call */
     call wc_isspace
-    test %eax, %eax            /* If it's not whitespace, loop */
+    test %eax, %eax /* If it's not whitespace, loop */
     jz .read_word
 
 .terminate_word:
-    movb $0, (%r13)           /* Null-terminate the buffer */
-    movl $1, %eax             /* Return 1 */
+    movb $0, (%r13) /* Null-terminate the buffer */
+    movl $1, %eax /* Return 1 */
     addq $32, %rsp
     popq %r13
     popq %r12
@@ -283,7 +283,7 @@ wc_readnext:
     ret
 
 .end_no_word:
-    movl $0, %eax             /* Return 0 */
+    movl $0, %eax  /* Return 0 */
     addq $32, %rsp
     popq %r13
     popq %r12
