@@ -245,7 +245,7 @@ wc_readnext:
     xorq %r12, %r12 /* r12 will be our index 'i' */
     movq %rdi, %rbx /* rbx will hold our FILE* 'in' */
 
-.Lskip_whitespace:
+.LskipWhitespace:
     movq %rbx, %rdi /* Restore FILE* in to rdi for fgetc */
     call fgetc
     cmp $-1, %eax /* Check for EOF */
@@ -254,9 +254,9 @@ wc_readnext:
     mov %rsi, %rdi /* Move the character to rdi for wc_isspace call */
     call wc_isspace
     test %eax, %eax /* If it's a whitespace, loop again */
-    jnz .Lskip_whitespace
+    jnz .LskipWhitespace
 
-.Lread_word:
+.LreadWord:
     cmpq $MAX_WORDLEN, %r12    /* Check if buffer is full */
     je .terminate_word
     movb %sil, (%r13) /* Store character into buffer */
@@ -270,7 +270,7 @@ wc_readnext:
     mov %rsi, %rdi /* Move the character to rdi for wc_isspace call */
     call wc_isspace
     test %eax, %eax /* If it's not whitespace, loop */
-    jz .Lread_word
+    jz .LreadWord
 
 .terminate_word:
     movb $0, (%r13) /* Null-terminate the buffer */
