@@ -393,78 +393,48 @@ wc_trim_non_alpha:
  * C function prototype:
  *    struct WordEntry *wc_find_or_insert(struct WordEntry *head, const unsigned char *s, int *inserted);
  */
-	.globl wc_find_or_insert
+    .globl wc_find_or_insert
 wc_find_or_insert:
-wc_find_or_insert:
+    pushq %rbp
+    movq %rsp, %rbp # rsp will point to new malloced area
     movq %rdi, %r10            # Copy head to current (current = head)
+    movq %rdi, %r14             # copy head to a constant register
     movq %rsi, %r11            # Copy s to rcx (s = rcx)
     movq %rdx, %r15            # Copy inserted to rdi (inserted = rdi)
-    pushq %rbp
-    movq %rbp, %rsp
-    pushq %r15
-    pushq %r11
-    pushq %r10
+   # movq $0, %r13
 
 .Lsearch_loop:
-    pop %r10
-    movq %r10, %r8
-    pushq %r10
-    cmpq $0, %r8              # Check if current is NULL
+    cmpq $0, %r10              # Check if current is NULL
     je .Linsert_new_node
-
-    pop %r10
-    pop %r11
-    pop %r15
-    movq %r15, %rdx        # Load &current->word into rdx (word pointer)
-    # pushq %rax                 # Save current on the stack
-    movq %r11, %rdi
-    movq %r15, %rsi
-    pushq %r15
-    pushq %r11
-    pushq %r10
+    movq %r10, %rdi    # load in string froom head
+    movq 72(%r10), %r12  # load in next from head
+    movq %r11, %rsi    # load second arguemnt with string to compare to
     call wc_str_compare        # Call wc_str_compare(lhs, rhs)
-
-     addq $8, %rsp              # Pop the current from the stack
-
     testq %rax, %rax           # Check if wc_str_compare result is 0
-    jz .Lfound_match
-
-    pop %r10
-    movq 72(%r10), %r10        # Move to the next node (current = current->next)
-    pushq %r10
+    jz .Lfound_match            # jumps to found mathc
+   # movq %r10, %r13         # save current 
+    movq %r12, %r10        # Move to the next node (current = current->next)
     jmp .Lsearch_loop
 
 .Lfound_match:
-    movl $0, (%rdi)            # Set inserted to 0 (matching object found)
-    movq %rax, %rax            # Return the pointer to the matching node
-    ret
+    movq %r10, %rax            # Return the pointer to the matching node
+    movq $0, %r15              # set inserted to 0
+    jmp .Lexit
 
 .Linsert_new_node:
-    popq %r10
-    popq %r11
-    popq %r15
-    # Allocate memory for the new WordEntry object
-    subq $80, %rsp
-    movq %rsp, %rax
-    
-    /*movq $80, %rdi             # Size of WordEntry struct (80 bytes)
-    call malloc                # Call malloc to allocate memory
-    testq %rax, %rax           # Check if malloc failed
-    jz malloc_failed*/
-
-    movq %r11, 0(%rax)          # Copy the string 's' into word
+    movl $80, %edi
+    call malloc
+    movq %rax, %rdi
+    movq %r11, %rsi
+    call wc_str_copy
+    movq %rdi, %rax
     movl $0, 64(%rax)          # Initialize count to 0
-    movq %r10, 72(%rax)        # Set next to point to the current head
-    movq $1, %r15            # Set inserted to 1 (new object inserted)
-    addq $80, %rsp
-    popq %rbp
+    movq %r14, 72(%rax)        # Set next to point to the current head
+    movq $1, %r15     # Set inserted to 1 (new object inserted)
+    jmp .Lexit
+.Lexit:
+    leave
     ret
-
-malloc_failed:
-    movl $-1, (%rdi)           # Set inserted to -1 (malloc failure)
-    xorq %rax, %rax            # Return NULL
-    ret
-
 
 /*
  * Sebastian Rincon
@@ -479,60 +449,44 @@ malloc_failed:
  * C function prototype:
  *    struct WordEntry *wc_dict_find_or_insert(struct WordEntry *buckets[], unsigned num_buckets, const unsigned char *s);
  */
-	.globl wc_dict_find_or_insert
+    .globl wc_dict_find_or_insert
 wc_dict_find_or_insert:
+    pushq %rbp
+    movq %rsp, %rbp
+
     movq %rdi, %r12 # loads hashtable to r12
     movq %rsi, %r13 # loads number of buckets to r13
     movq %rdx, %r14 # loads string to look/insert to r14
 
-    pushq %r14 # pushes string into stack
-    pushq %r13 # pushes num buckets into stack
-    pushq %r12 # pushes hashtable to stack
-
     movq %r14, %rdi # sets parameter to the string
     call wc_hash # calls hashfunction to get hash number from string
-    popq %r12
-    popq %r13
-    movq %r13, %rcx # move numbukets to to r9 to be divosor
+
+    movq %r13, %rcx # move numbukets to to rcx to be divosor
+    movq %rax, %rax # dividend is rax
     xorq %rdx, %rdx
-    divq %rcx # divide rax by rx, result is in rax, remainder in rdx
-    movq %rdx, %r8 # move remainder value to r8
-    pop %r14 # pops string
+    idivq %rcx # divide rax by rx, result is in rax, remainder in rdx
+    movq %rdx, %r8 # move remainder value to rax
+
     movq %r14, %rsi # sets string as 2nd parameter
-    leaq 0(%r12, %r8, 8), %r10 # finds address of start of linked list
-    movq (%r10), %rdi # sets headofLink list as parameter 1
-    movq $0, %r9
-    movq %r9, %rdx
 
-    pushq %r14
-    pushq %r13
-    pushq %r12
-    pushq %r8
-    pushq %rdx
-
-    call wc_find_or_insert
-
-    popq %rdx
-    push %rax
-    movq %rdx, %r10
-    cmpq $1, %r10
-    je .Lupdate_head
-    pop %rax
-    popq %r8
-    popq %r12
-    popq %r13
-    popq %r14
+    movq (%r12, %r8, 8), %r10 # finds address of start of linked list
+    movq %r10, %rdi # sets headofLink list as parameter 1
+    leaq insertInt(%rip), %rdx
+    # movq $0, %rdx  # sets the inserted int value to 0
+    # leaq (%r9), %rdx # puts that value in the 3rd parameter
+     # movq (%rdx), %rdx
+    # leaq (%r9), %rdx
+    call wc_find_or_insert # calls wc_find_or_insert
+    cmpq $1, %rdx # compare if inserted is 1
+    je .Lupdate_head # if it is 1, go to update head
+    leave
     ret
 
 .Lupdate_head:
-    pop %rax
-    popq %r8
-    popq %r12
-    popq %r13
-    popq %r14
-    leaq (%r12, %r8, 8), %r9
-    movq %r12 , %r9
+    movq %rax, %r10 # moves new node as the head of the link list
+    leave
     ret
+
 
 
 /*
@@ -542,10 +496,21 @@ wc_dict_find_or_insert:
  * C function prototype:
  *    void wc_free_chain(struct WordEntry *p);
  */
-	.globl wc_free_chain
+    .globl wc_free_chain
 wc_free_chain:
-	/* TODO: implement */
-	ret
+    testq %rdi, %rdi   # chekcs if the inputed list is empty
+    je .Ldone_ret # if null, jump to end and return
+
+.Lmain_loop_free:
+    movq 72(%rdi), %rax  # move current->next pointer into rax
+    call free   # frees current node
+    movq %rax, %rdi  # move to next node
+    testq %rdi, %rdi # test if the end of the list is reached
+    jne .Lmain_loop_free # if null, then jump to done to end function
+
+.Ldone_ret:
+    ret
+
 
 /*
 vim:ft=gas:
