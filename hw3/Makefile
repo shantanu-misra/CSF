@@ -14,6 +14,11 @@ BINDIR = bin
 SRCS = $(wildcard $(SRCDIR)/*.cpp)
 OBJS = $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SRCS))
 
+# Default target
+all: $(BINDIR)/$(TARGET)
+
+csim: $(BINDIR)/$(TARGET)
+
 # Rule to build the target from the object files
 $(BINDIR)/$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
