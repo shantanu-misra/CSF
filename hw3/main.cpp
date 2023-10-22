@@ -57,6 +57,7 @@ int main(int argc, char* argv[]) {
     std::string discard; // the last cahracter which will be discarded
     unsigned int addr;
     
+    // while(std::cin >> operation >> address >> discard) {
     while(traceFile >> operation >> address >> discard) {
         // Convert hex string to unsigned int
         addr = std::strtol(address.c_str(), nullptr, 16);
@@ -69,7 +70,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    traceFile.close();
+    // traceFile.close();
     myCache.printSummary();
 
     return 0;
