@@ -24,6 +24,7 @@ private:
     bool writeAllocate;
     bool writeBack;
     bool lruEviction;
+    bool fifoEviction;
 
     unsigned long currentCycle;
 
@@ -36,7 +37,7 @@ private:
     unsigned long totalCycles;
 
 public:
-    Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, bool lruEviction);
+    Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, bool lruEviction, bool fifoEviction);
     void read(unsigned int address, int bytesInBlock);
     void write(unsigned int address, int bytesInBlock);
     void printSummary();

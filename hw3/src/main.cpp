@@ -11,7 +11,7 @@ bool isPowerOfTwo(int n) {
 }
 
 int main(int argc, char* argv[]) {
-    if(argc != 9) {
+    if(argc != 8) {
         std::cerr << "Usage: " << argv[0] << " <num_sets> <num_blocks> <bytes_in_block> <write_policy> <write_through_or_back> <eviction_policy> <trace_file>" << std::endl;
         return 1;
     }
@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
     bool writeAllocate = (std::string(argv[4]) == "write-allocate");
     bool writeBack = (std::string(argv[5]) == "write-back");
     bool lruEviction = (std::string(argv[6]) == "lru");
+    bool fifoEviction = (std::string(argv[6]) == "fifo");
 
     // Check for configuration validity
     if (!isPowerOfTwo(bytesInBlock) || !isPowerOfTwo(numSets)) {
@@ -38,6 +39,10 @@ int main(int argc, char* argv[]) {
         std::cerr << "Error: Cannot use write-back without write-allocate." << std::endl;
         return 1;
     }
+    if (!lruEviction && !fifoEviction) {
+        std::cerr << "Error: Replacement algorithim neither LRU nor FIFO." << std::endl;
+        return 1;
+    }
 
     std::string traceFilename = argv[7];
     std::ifstream traceFile(traceFilename);
@@ -47,11 +52,12 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    Cache myCache(numSets, blocksPerSet, writeAllocate, writeBack, lruEviction);
+    Cache myCache(numSets, blocksPerSet, writeAllocate, writeBack, lruEviction, fifoEviction);
     std::string operation, address;
+    std::string discard; // the last cahracter which will be discarded
     unsigned int addr;
     
-    while(traceFile >> operation >> address) {
+    while(traceFile >> operation >> address >> discard) {
         // Convert hex string to unsigned int
         addr = std::strtol(address.c_str(), nullptr, 16);
 

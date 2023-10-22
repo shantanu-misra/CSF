@@ -2,9 +2,9 @@
 #include <iostream>
 
 // Constructor to initialize cache parameters and counters.
-Cache::Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, bool lruEviction)
+Cache::Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, bool lruEviction, bool fifoEviction)
     : numSets(numSets), blocksPerSet(blocksPerSet), writeAllocate(writeAllocate), 
-      writeBack(writeBack), lruEviction(lruEviction), currentCycle(0) {
+      writeBack(writeBack), lruEviction(lruEviction), fifoEviction(fifoEviction), currentCycle(0) {
     sets.resize(numSets);
 
     // Initializing each block in each set.
