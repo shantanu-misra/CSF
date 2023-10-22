@@ -9,7 +9,8 @@ struct Block {
     bool valid;
     unsigned int tag;
     bool dirty;  // For write-back policy
-    unsigned long long accessedCounter;  // LRU counter
+    unsigned long accessedCounter;  // LRU counter
+    unsigned long loadCounter;  // FIFO counter
 };
 
 struct Set {

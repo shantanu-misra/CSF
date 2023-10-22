@@ -15,6 +15,7 @@ Cache::Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, 
             sets[i].blocks[j].tag = 0;
             sets[i].blocks[j].dirty = false;  // No pending writes.
             sets[i].blocks[j].accessedCounter = 0;  // For LRU.
+            sets[i].blocks[j].loadCounter = 0;  // For FIFO.
         }
     }
 
@@ -39,34 +40,44 @@ void Cache::read(unsigned int address, int bytesInBlock) {
     Set& currentSet = sets[index];
 
     bool hit = false;
-    unsigned int lruIndex = 0;
+    unsigned int evictionIndex = 0;
 
     // Check each block in the set to find a hit or identify the LRU block.
     for (int i = 0; i < blocksPerSet; ++i) {
         if (currentSet.blocks[i].valid && currentSet.blocks[i].tag == tag) {
             hit = true;
+            loadHits++;
             if (lruEviction) {
                 currentSet.blocks[i].accessedCounter = currentCycle;  // LRU policy update.
             }
-            loadHits++;
             break;
         }
 
-        if (currentSet.blocks[i].accessedCounter < currentSet.blocks[lruIndex].accessedCounter) {
-            lruIndex = i;  // Track the least recently accessed block.
+        if (!currentSet.blocks[i].valid) {
+            evictionIndex = i;
+            break;
+        }
+
+        // For LRU eviction
+        if (lruEviction && currentSet.blocks[i].accessedCounter < currentSet.blocks[evictionIndex].accessedCounter) {
+            evictionIndex = i;
+        }
+        // For FIFO eviction
+        if (fifoEviction && currentSet.blocks[i].loadCounter < currentSet.blocks[evictionIndex].loadCounter) {
+            evictionIndex = i;
         }
     }
 
     // If miss, we might need to evict and access main memory.
     if (!hit) {
         loadMisses++;
-        totalCycles += MEMORY_ACCESS_CYCLES;  // Penalty for main memory access.
+        totalCycles += (bytesInBlock / 4) * MEMORY_ACCESS_CYCLES;  // Penalty for main memory access.
 
-        Block& evictedBlock = currentSet.blocks[lruIndex];
+        Block& evictedBlock = currentSet.blocks[evictionIndex];
 
         // If block is dirty, write back to main memory.
         if (evictedBlock.valid && evictedBlock.dirty) {
-            totalCycles += MEMORY_ACCESS_CYCLES;
+            totalCycles += 2 * (bytesInBlock / 4) * MEMORY_ACCESS_CYCLES;
             evictedBlock.dirty = false;
         }
 
@@ -74,6 +85,10 @@ void Cache::read(unsigned int address, int bytesInBlock) {
         evictedBlock.valid = true;
         evictedBlock.tag = tag;
         evictedBlock.accessedCounter = currentCycle;  // Set block as recently accessed.
+
+        if (fifoEviction) {
+            currentSet.blocks[evictionIndex].loadCounter = currentCycle;
+        }
     }
 
     totalCycles++;
@@ -90,39 +105,54 @@ void Cache::write(unsigned int address, int bytesInBlock) {
     Set& currentSet = sets[index];
 
     bool hit = false;
-    unsigned int lruIndex = 0;
+    unsigned int evictionIndex = 0;
 
-    // Check each block in the set for a hit or identify the LRU block.
+    // Check each block in the set for a hit or identify the block.
     for (int i = 0; i < blocksPerSet; ++i) {
         if (currentSet.blocks[i].valid && currentSet.blocks[i].tag == tag) {
             hit = true;
-            if (lruEviction) {
-                currentSet.blocks[i].accessedCounter = currentCycle;  // LRU policy update.
-            }
             storeHits++;
+            if (lruEviction) {
+                currentSet.blocks[i].accessedCounter = currentCycle;
+            }
             break;
         }
 
-        if (currentSet.blocks[i].accessedCounter < currentSet.blocks[lruIndex].accessedCounter) {
-            lruIndex = i;
+        if (!currentSet.blocks[i].valid) {
+            evictionIndex = i;
+            break;
+        }
+
+        // For LRU eviction
+        if (lruEviction && currentSet.blocks[i].accessedCounter < currentSet.blocks[evictionIndex].accessedCounter) {
+            evictionIndex = i;
+        }
+
+        // For FIFO eviction
+        if (fifoEviction && currentSet.blocks[i].loadCounter < currentSet.blocks[evictionIndex].loadCounter) {
+            evictionIndex = i;
         }
     }
 
     // If miss, similar steps as in read but more nuances based on write policies.
     if (!hit) {
         storeMisses++;
-        totalCycles += MEMORY_ACCESS_CYCLES;
+        totalCycles += (bytesInBlock / 4) * MEMORY_ACCESS_CYCLES;
 
-        Block& evictedBlock = currentSet.blocks[lruIndex];
+        Block& evictedBlock = currentSet.blocks[evictionIndex];
         
         if (evictedBlock.valid && evictedBlock.dirty) {
-            totalCycles += MEMORY_ACCESS_CYCLES;
+            totalCycles += (bytesInBlock / 4) * MEMORY_ACCESS_CYCLES;
             evictedBlock.dirty = false;
         }
 
         evictedBlock.valid = true;
         evictedBlock.tag = tag;
         evictedBlock.accessedCounter = currentCycle;
+
+        if (fifoEviction) {
+            currentSet.blocks[evictionIndex].loadCounter = currentCycle;
+        }
     }
 
     totalCycles++;
