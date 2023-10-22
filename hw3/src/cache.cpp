@@ -42,7 +42,7 @@ void Cache::read(unsigned int address, int bytesInBlock) {
     unsigned int lruIndex = 0;
 
     // Check each block in the set to find a hit or identify the LRU block.
-    for (unsigned int i = 0; i < blocksPerSet; ++i) {
+    for (int i = 0; i < blocksPerSet; ++i) {
         if (currentSet.blocks[i].valid && currentSet.blocks[i].tag == tag) {
             hit = true;
             if (lruEviction) {
@@ -93,7 +93,7 @@ void Cache::write(unsigned int address, int bytesInBlock) {
     unsigned int lruIndex = 0;
 
     // Check each block in the set for a hit or identify the LRU block.
-    for (unsigned int i = 0; i < blocksPerSet; ++i) {
+    for (int i = 0; i < blocksPerSet; ++i) {
         if (currentSet.blocks[i].valid && currentSet.blocks[i].tag == tag) {
             hit = true;
             if (lruEviction) {
