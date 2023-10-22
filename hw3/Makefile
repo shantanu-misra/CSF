@@ -5,31 +5,26 @@ CXXFLAGS = -Wall -Wextra -pedantic -std=c++11
 # Define the target executable name
 TARGET = csim
 
-# Define directories
-SRCDIR = src
-OBJDIR = obj
-BINDIR = bin
-
 # Define the source and object files
-SRCS = $(wildcard $(SRCDIR)/*.cpp)
-OBJS = $(patsubst $(SRCDIR)/%.cpp, $(OBJDIR)/%.o, $(SRCS))
+SRCS = $(wildcard *.cpp)
+OBJS = $(patsubst %.cpp, %.o, $(SRCS))
 
 # Default target
-all: $(BINDIR)/$(TARGET)
+all: $(TARGET)
 
-csim: $(BINDIR)/$(TARGET)
+csim: $(TARGET)
 
 # Rule to build the target from the object files
-$(BINDIR)/$(TARGET): $(OBJS)
+$(TARGET): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Rule to build object files from source files
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+%.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Rule to clean the object files and the executable
 clean:
-	rm -f $(OBJS) $(BINDIR)/$(TARGET)
+	rm -f $(OBJS) $(TARGET)
 
 depend:
 	$(CXX) $(CXXFLAGS) -M $(SRCS) > depend.mak
