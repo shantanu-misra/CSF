@@ -15,6 +15,7 @@ struct Block {
 
 struct Set {
     std::vector<Block> blocks;
+    int evictionIndex = 0;
 };
 
 class Cache {
@@ -41,6 +42,7 @@ public:
     Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, bool lruEviction, bool fifoEviction);
     void read(unsigned int address, int bytesInBlock);
     void write(unsigned int address, int bytesInBlock);
+    void replaceBlock(unsigned int evictionIndex, Set& currentSet, char command, int bytesInBlock,  unsigned int tag);
     void printSummary();
 };
 
