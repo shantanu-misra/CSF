@@ -11,6 +11,7 @@ Cache::Cache(int numSets, int blocksPerSet, bool writeAllocate, bool writeBack, 
     for (int i = 0; i < numSets; ++i) {
         sets[i].blocks.resize(blocksPerSet);
         for (int j = 0; j < blocksPerSet; ++j) {
+
             sets[i].blocks[j].valid = false;  // Initially, block contains no valid data.
             sets[i].blocks[j].tag = 0;
             sets[i].blocks[j].dirty = false;  // No pending writes.
@@ -106,7 +107,6 @@ void Cache::write(unsigned int address, int bytesInBlock) {
             }
             break;
         }
-
         if (!currentSet.blocks[i].valid) {
             evictionIndexCur = i;
             break;
@@ -144,14 +144,14 @@ void Cache::replaceBlock(unsigned int evictionIndex, Set& currentSet, char comma
     if (command =='w') {
             storeMisses++;
             Block& evictedBlock = currentSet.blocks[evictionIndex];
-            evictedBlock.dirty = writeBack;
+            //evictedBlock.dirty = writeBack;
             if (evictedBlock.valid && evictedBlock.dirty) {
                 totalCycles += (bytesInBlock / 4) * MEMORY_ACCESS_CYCLES;
                 evictedBlock.dirty = false;
             }
             evictedBlock.dirty = writeBack;
             totalCycles += bytesInBlock/4 * MEMORY_ACCESS_CYCLES;
-
+//make sure that this is write, is write back and write through done correctly??
             evictedBlock.valid = true;
             evictedBlock.tag = tag;
             evictedBlock.accessedCounter = currentCycle;

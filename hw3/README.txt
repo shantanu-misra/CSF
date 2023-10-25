@@ -1,4 +1,3 @@
-ISSUES:
-1. 
-2. BIGGEST ISSUE: the writes don't really work. write allocate, write back etc 
-3. MAJOR ISSUE: Clock cycles are like...50% less
+Project Contributions:
+Shantanu: main, read, and write methods.
+Sebastian: replace block method and implamentation of write through,back
