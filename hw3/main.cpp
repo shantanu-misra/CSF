@@ -11,7 +11,7 @@ bool isPowerOfTwo(int n) {
 }
 
 int main(int argc, char* argv[]) {
-    if(argc != 8) {
+    if(argc != 7) {
         std::cerr << "Usage: " << argv[0] << " <num_sets> <num_blocks> <bytes_in_block> <write_policy> <write_through_or_back> <eviction_policy> <trace_file>" << std::endl;
         return 1;
     }
@@ -44,21 +44,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string traceFilename = argv[7];
-    std::ifstream traceFile(traceFilename);
+    // std::string traceFilename = argv[7];
+    // std::ifstream traceFile(traceFilename);
     
-    if(!traceFile.is_open()) {
-        std::cerr << "Failed to open the trace file." << std::endl;
-        return 1;
-    }
+    // if(!traceFile.is_open()) {
+    //     std::cerr << "Failed to open the trace file." << std::endl;
+    //     return 1;
+    // }
 
     Cache myCache(numSets, blocksPerSet, writeAllocate, writeBack, lruEviction, fifoEviction);
     std::string operation, address;
     std::string discard; // the last cahracter which will be discarded
     unsigned int addr;
     
-    // while(std::cin >> operation >> address >> discard) {
-    while(traceFile >> operation >> address >> discard) {
+    while(std::cin >> operation >> address >> discard) {
+    // while(traceFile >> operation >> address >> discard) {
         // Convert hex string to unsigned int
         addr = std::strtol(address.c_str(), nullptr, 16);
 
