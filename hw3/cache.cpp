@@ -150,14 +150,14 @@ void Cache::replaceBlock(unsigned int evictionIndex, Set& currentSet, char comma
     if (command =='w') {
             storeMisses++;
             Block& evictedBlock = currentSet.blocks[evictionIndex];
-            //evictedBlock.dirty = writeBack;
+
             if (evictedBlock.valid && evictedBlock.dirty) {
                 totalCycles += (bytesInBlock / 4) * MEMORY_ACCESS_CYCLES;
                 evictedBlock.dirty = false;
             }
             evictedBlock.dirty = writeBack;
             totalCycles += bytesInBlock/4 * MEMORY_ACCESS_CYCLES;
-//make sure that this is write, is write back and write through done correctly??
+
             evictedBlock.valid = true;
             evictedBlock.tag = tag;
             evictedBlock.accessedCounter = currentCycle;
