@@ -92,16 +92,18 @@ void Cache::write(unsigned int address, int bytesInBlock) {
 
     // Check each block in the set for a hit or identify the block.
     for (int i = 0; i < blocksPerSet; ++i) {
+        
         if (currentSet.blocks[i].valid && currentSet.blocks[i].tag == tag) {
             hit = true;
             storeHits++;
-            /*
-            if(writeBack){
-                totalCycles += 101;
+            
+            if(!writeBack) {
+                totalCycles += MEMORY_ACCESS_CYCLES;
             }
-            else{
+            else {
                 currentSet.blocks[i].dirty = true;
-            }*/
+            }
+
             if (lruEviction) {
                 currentSet.blocks[i].accessedCounter = currentCycle;
             }
@@ -128,11 +130,15 @@ void Cache::write(unsigned int address, int bytesInBlock) {
     if (!hit) {
         if(writeAllocate) {
             replaceBlock(evictionIndexCur, currentSet, command, bytesInBlock, tag);
+
+            if (!writeBack) {
+                totalCycles += MEMORY_ACCESS_CYCLES;
+            }
         }
-        //not write allocate, so update it simple
+        // not write allocate, so update it simple
         else {
             storeMisses++;
-            totalCycles += MEMORY_ACCESS_CYCLES;
+            totalCycles += (bytesInBlock / 4 + 1) * MEMORY_ACCESS_CYCLES;
         }
     }
     totalCycles++;
