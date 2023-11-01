@@ -138,7 +138,7 @@ void Cache::write(unsigned int address, int bytesInBlock) {
         // not write allocate, so update it simple
         else {
             storeMisses++;
-            totalCycles += (bytesInBlock / 4 + 1) * MEMORY_ACCESS_CYCLES;
+            totalCycles += MEMORY_ACCESS_CYCLES;
         }
     }
     totalCycles++;
