@@ -26,7 +26,7 @@ eviction_policy: Dictates the strategy used to decide which block to evict when 
     FIFO: First in first out
 
 For our analysis, to make meaningful comparisons between different configurations, we will hold certain parameters constant.
-So, we will keep the total cache size constant at 32KB. We chose this value because its resonably big, but not too big.
+So, we will keep the total cache size constant at 4KB. We chose this value because its resonably big, but not too big.
 
 The top-10 best caches (minimum total-cycles) are: 
 num_sets    num_blocks  bytes_in_blocks
