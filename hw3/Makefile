@@ -6,7 +6,7 @@ CXXFLAGS = -Wall -Wextra -pedantic -std=c++11
 TARGET = csim
 
 # Define the source and object files
-SRCS = $(wildcard *.cpp)
+SRCS = main.cpp utils.cpp cache.cpp
 OBJS = $(patsubst %.cpp, %.o, $(SRCS))
 
 # Default target
