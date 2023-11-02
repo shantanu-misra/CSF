@@ -70,9 +70,44 @@ void merge_sort(int64_t *arr, size_t begin, size_t end, size_t threshold) {
 
   size_t mid = begin + size/2;
 
-  // TODO: parallelize the recursive sorting
-  merge_sort(arr, begin, mid, threshold);
-  merge_sort(arr, mid, end, threshold);
+// TODO: parallelize the recursive sorting
+  pid_t first = fork();
+  if(first == 0){
+    merge_sort(arr, begin, mid, threshold);
+    exit(0);
+  }
+  else{
+    exit(1);
+  }
+  pid_t second = fork();
+  if(second == 0){
+    merge_sort(arr, mid, end, threshold);
+    exit(0);
+  }
+  else {
+    exit(1);
+  }
+
+  int firstStatus;
+  int secondStatus;
+
+  pid_t firstStatuspid = waitpid(first, &firstStatus, 0);
+  pid_t secondStatuspid = waitpid(second, &secondStatus, 0);
+
+  if(firstStatuspid == -1 || secondStatuspid == -1) {
+    fprintf(stderr, "%s", "Error: error while forking\n");
+    exit(2);
+  }
+  
+  if(!WIFEXITED(firstStatus) || !WIFEXITED(secondStatus)) {
+    fprintf(stderr, "%s", "Error: error while forking\n");
+  }
+
+  if(WEXISTATUS(firstStatus) != 0 || WEXITSTATUS(secondStatus) != 0){
+    fprintf(stderr, "%s", "Error: sorting caused error");
+    munmap(arr, (end +1) * sizeof(int64_t));
+    exit(2);
+  }
 
   // allocate temp array now, so we can avoid unnecessary work
   // if the malloc fails
@@ -105,13 +140,15 @@ int main(int argc, char **argv) {
   const char *filename = argv[1];
   char *end;
   size_t threshold = (size_t) strtoul(argv[2], &end, 10);
-  if (end != argv[2] + strlen(argv[2])) {
-    fprint(stderr, "%s", "Error: threshold value is invalid\n"); // TODO: report an error (threshold value is invalid)
+
+  // TODO: report an error (threshold value is invalid)
+  if (end != argv[2] + strlen(argv[2]) && threshold <= 0) {
+    fprint(stderr, "%s", "Error: threshold value is invalid\n"); 
     return 1;
   }
 
   // TODO: open the file
-  int fileOpened = opne(filename, O_RDWR);
+  int fileOpened = open(filename, O_RDWR);
   if (fileOpened < 0) {
     fprintf(stderr, "%s", "Error: file could not be opened\n");
     close(fileOpened);
