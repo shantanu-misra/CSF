@@ -106,18 +106,43 @@ int main(int argc, char **argv) {
   char *end;
   size_t threshold = (size_t) strtoul(argv[2], &end, 10);
   if (end != argv[2] + strlen(argv[2])) {
-    // TODO: report an error (threshold value is invalid)
+    fprint(stderr, "%s", "Error: threshold value is invalid\n"); // TODO: report an error (threshold value is invalid)
+    return 1;
   }
 
   // TODO: open the file
+  int fileOpened = opne(filename, O_RDWR);
+  if (fileOpened < 0) {
+    fprintf(stderr, "%s", "Error: file could not be opened\n");
+    close(fileOpened);
+    exit(1);
+  }
 
   // TODO: use fstat to determine the size of the file
+  struct stat statFile;
+  int rc = fstat(fileOpened, &statFile);
+  if(rc != 0){
+    fprintf(stderr, "%s", "Error: error with fstat\n");
+    close(fileOpened);
+    exit(1);
+  }
+  size_t fileSize = statFile.st_size;
 
   // TODO: map the file into memory using mmap
+  int64_t *curData = mmap(NULL, fileSize, PROT_READ | PROT_WRITE, MAP_SHARED, fileOpened, 0);
+  close(fileOpened);
+  if(curData == MAP_FAILED) {
+    munmap(curData, fileSize);
+    fprintf(stderr, "%s", "Error: error in opening map\n");
+    exit(1);
+  }
 
   // TODO: sort the data!
+  merge_sort(curData, 0, fileSize/sizeof(int64_t) - 1, threshold);
 
   // TODO: unmap and close the file
+  munmap(curData, fileSize);
 
   // TODO: exit with a 0 exit code if sort was successful
+  return 0;
 }
