@@ -103,9 +103,9 @@ void merge_sort(int64_t *arr, size_t begin, size_t end, size_t threshold) {
     fprintf(stderr, "%s", "Error: error while forking\n");
   }
 
-  if(WEXISTATUS(firstStatus) != 0 || WEXITSTATUS(secondStatus) != 0){
+  if(WEXITSTATUS(firstStatus) != 0 || WEXITSTATUS(secondStatus) != 0){
     fprintf(stderr, "%s", "Error: sorting caused error");
-    munmap(arr, (end +1) * sizeof(int64_t));
+    munmap(arr, (end) * sizeof(int64_t));
     exit(2);
   }
 
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
 
   // TODO: report an error (threshold value is invalid)
   if (end != argv[2] + strlen(argv[2]) && threshold <= 0) {
-    fprint(stderr, "%s", "Error: threshold value is invalid\n"); 
+    fprintf(stderr, "%s", "Error: threshold value is invalid\n"); 
     return 1;
   }
 
@@ -175,7 +175,7 @@ int main(int argc, char **argv) {
   }
 
   // TODO: sort the data!
-  merge_sort(curData, 0, fileSize/sizeof(int64_t) - 1, threshold);
+  merge_sort(curData, 0, fileSize/sizeof(int64_t), threshold);
 
   // TODO: unmap and close the file
   munmap(curData, fileSize);
