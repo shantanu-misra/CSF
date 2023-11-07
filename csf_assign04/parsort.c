@@ -72,20 +72,20 @@ void merge_sort(int64_t *arr, size_t begin, size_t end, size_t threshold) {
 
 // TODO: parallelize the recursive sorting
   pid_t first = fork();
-  if(first == 0){
+  if (first == -1) {
+    exit(1);
+  }
+  else if(first == 0){
     merge_sort(arr, begin, mid, threshold);
     exit(0);
   }
-  else{
+  pid_t second = fork();
+  if(second == -1) {
     exit(1);
   }
-  pid_t second = fork();
-  if(second == 0){
+  else if(second == 0){
     merge_sort(arr, mid, end, threshold);
     exit(0);
-  }
-  else {
-    exit(1);
   }
 
   int firstStatus;
@@ -105,7 +105,7 @@ void merge_sort(int64_t *arr, size_t begin, size_t end, size_t threshold) {
 
   if(WEXITSTATUS(firstStatus) != 0 || WEXITSTATUS(secondStatus) != 0){
     fprintf(stderr, "%s", "Error: sorting caused error");
-    munmap(arr, (end) * sizeof(int64_t));
+    munmap(arr, end * sizeof(int64_t));
     exit(2);
   }
 
