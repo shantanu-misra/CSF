@@ -13,28 +13,23 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  std::string server_hostname;
-  int server_port;
-  std::string username;
-
-  server_hostname = argv[1];
-  server_port = std::stoi(argv[2]);
-  username = argv[3];
+  std::string server_hostname = argv[1];
+  int server_port = std::stoi(argv[2]);
+  std::string username = argv[3];
 
   // connect to server
-  Connection conn; // Using the Connection class
-  conn.connect(server_hostname, server_port); // Connect to the server
+  Connection conn;
+  conn.connect(server_hostname, server_port);
   if (!conn.is_open()) {
     std::cerr << "Failed to connect to the server.\n";
     return 1;
   }
 
   // send slogin message
-  Message slogin_msg;
-  slogin_msg.tag = "slogin";
-  slogin_msg.data = username;
+  Message slogin_msg{"slogin", username};
   if (!conn.send(slogin_msg)) {
     std::cerr << "Failed to send login message.\n";
+    conn.close();
     return 1;
   }
 
@@ -42,65 +37,66 @@ int main(int argc, char **argv) {
   Message response;
   if (!conn.receive(response) || conn.get_last_result() == Connection::EOF_OR_ERROR) {
     std::cerr << "Login failed: no response or error from server.\n";
+    conn.close();
     return 1;
   }
+
   if (response.tag == "err") {
     std::cerr << "Error during login: " << response.data << "\n";
+    conn.close();
     return 1;
   }
 
   // Main loop for reading commands and sending messages
   std::string line;
   while (getline(std::cin, line)) {
-    trim(line); // Function to remove leading and trailing whitespace, make sure it is defined
+    trim(line);
     if (line.empty()) continue;
 
     Message msg;
-    if (line[0] == '/') { // Command
+    if (line[0] == '/') {
       std::string cmd = line.substr(1);
       size_t spaceIndex = cmd.find(' ');
-      msg.tag = spaceIndex != std::string::npos ? cmd.substr(0, spaceIndex) : cmd; // Extract the command
-      msg.data = spaceIndex != std::string::npos ? cmd.substr(spaceIndex + 1) : ""; // Extract the data if present
+      msg.tag = spaceIndex != std::string::npos ? cmd.substr(0, spaceIndex) : cmd;
+      msg.data = spaceIndex != std::string::npos ? cmd.substr(spaceIndex + 1) : "";
 
-      if (msg.tag == "quit") {
-        if (!conn.send(msg)) {
-          std::cerr << "Failed to send quit command.\n";
-          break;
-        }
-        // Wait for quit ack before closing
-        if (!conn.receive(msg) || msg.tag != "ok") {
-          std::cerr << "Quit not acknowledged by server.\n";
-          break;
-        }
-        break;
+      if (!conn.send(msg)) {
+        std::cerr << "Failed to send command: " << msg.tag << "\n";
+        conn.close();
+        return 1;
       }
-    } else { // Regular message
+
+      if (!conn.receive(response) || conn.get_last_result() == Connection::EOF_OR_ERROR) {
+        std::cerr << "Error or disconnection after command: " << msg.tag << "\n";
+        conn.close();
+        return 1;
+      }
+
+      if (response.tag == "err") {
+        std::cerr << "Error: " << response.data << "\n";
+        conn.close();
+        return 1; // Close and exit if any command error
+      } else if (response.tag != "ok") {
+        std::cerr << "Unexpected response from server: " << response.data << "\n";
+        conn.close();
+        return 1;
+      }
+
+      if (msg.tag == "quit") break; // Exit the loop after 'quit'
+
+    } else {
+      // Handling a regular message, not a command
       msg.tag = "sendall";
       msg.data = line;
-    }
+      
+      if (!conn.send(msg)) {
+        std::cerr << "Failed to send message: " << line << "\n";
+        conn.close();
+        return 1; // Exit on send failure
+      }
 
-    // Send the message to the server
-    if (!conn.send(msg)) {
-      std::cerr << "Failed to send message: " << line << "\n";
-      break; // Exit the loop if send fails
+      // Regular messages do not expect a server response according to the flowchart
     }
-
-    // Wait for server response
-    if (!conn.receive(msg) || conn.get_last_result() == Connection::EOF_OR_ERROR) {
-      std::cerr << "Server error or connection closed.\n";
-      break;
-    }
-
-    // Check if the server response is an error
-    if (msg.tag == "err") {
-      std::cerr << "Error: " << msg.data << "\n";
-      continue; // Continue to process new commands
-    } else if (msg.tag != "ok") {
-      std::cerr << "Unexpected response from server: " << msg.data << "\n";
-      continue; // Continue to process new commands
-    }
-
-    // If an ok response is received, continue to process new commands
   }
 
   conn.close(); // Close the connection
