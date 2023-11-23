@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // send rlogin message
+  // Send rlogin message
   Message rlogin_msg{"rlogin", username};
   if (!conn.send(rlogin_msg)) {
     std::cerr << "Failed to send rlogin message.\n";
@@ -47,7 +47,7 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  // send join message
+  // Send join message
   Message join_msg{"join", room};
   if (!conn.send(join_msg)) {
     std::cerr << "Failed to send join message.\n";
@@ -80,7 +80,13 @@ int main(int argc, char **argv) {
       std::cerr << "Error: " << response.data << "\n";
       continue; // Continue listening for messages
     } else if (response.tag == "delivery") {
-      std::cout << response.data << "\n"; // Print delivered message
+      // Assuming the delivery format is "delivery:room;sender;message"
+      std::istringstream iss(response.data);
+      std::string room, sender, message;
+      getline(iss, room, ';');
+      getline(iss, sender, ';');
+      getline(iss, message);
+      std::cout << sender << ": " << message << "\n"; // Print delivered message
     }
   }
 
