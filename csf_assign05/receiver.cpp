@@ -67,7 +67,7 @@ while (true) {
     getline(iss, room, ':'); // Assuming the first token is the room, which we ignore
     getline(iss, sender, ':'); // The second token is the sender
     getline(iss, message_text); // The rest is the message text
-    std::cout << "[" << sender << "]: " << message_text << "\n";
+    std::cout << sender << message_text << "\n";
   } else if (response.tag == "err") {
     std::cerr << "Error: " << response.data << "\n";
     // If it's a join or login error, terminate the program
