@@ -1,6 +1,10 @@
+#include <cstddef>
+#include <iostream>
 #include <sstream>
 #include <cctype>
 #include <cassert>
+#include <string>
+#include <unistd.h>
 #include "csapp.h"
 #include "message.h"
 #include "connection.h"
@@ -13,68 +17,78 @@ Connection::Connection()
 Connection::Connection(int fd)
   : m_fd(fd)
   , m_last_result(SUCCESS) {
-  // call rio_readinitb to initialize the rio_t object
-  rio_readinitb(&m_fdbuf, m_fd);
+  //call rio_readinitb to initialize the rio_t object
+  rio_readinitb(&m_fdbuf, fd);
 }
 
 void Connection::connect(const std::string &hostname, int port) {
   // call open_clientfd to connect to the server
-  m_fd = Open_clientfd(hostname.c_str(), std::to_string(port).c_str());
-
-  // call rio_readinitb to initialize the rio_t object
+  // int client_fd = open_clientfd(hostname.c_str(), std::to_string(port).c_str());
+  // m_fd = client_fd;
+  // //call rio_readinitb to initialize the rio_t object
+  // rio_readinitb(&m_fdbuf, client_fd);
+  std::string port_str = std::to_string(port);
+  m_fd = open_clientfd(hostname.c_str(), port_str.c_str());
   rio_readinitb(&m_fdbuf, m_fd);
 }
 
 Connection::~Connection() {
-  // close the socket if it is open
-  if (is_open()) {
-    Close(m_fd);
-  }
+  Connection::close();
 }
 
 bool Connection::is_open() const {
-  // return true if the connection is open
-  return m_fd != -1;
+  //return true if the connection is open
+  return m_fd > 0;
 }
 
 void Connection::close() {
-  // close the connection if it is open
-  if (is_open()) {
-    Close(m_fd);
-    m_fd = -1;
-  }
+  ::close(m_fd);
 }
 
 bool Connection::send(const Message &msg) {
-  // send a message
+  //send a message
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
 
-  // Create a string representation of the message
-  std::string message_string = msg.tag + ":" + msg.data + "\n";
-  // Send the message
-  ssize_t bytes_written = rio_writen(m_fd, message_string.c_str(), message_string.length());
-  m_last_result = (bytes_written == static_cast<ssize_t>(message_string.length())) ? SUCCESS : EOF_OR_ERROR;
+  //turn the tag into char*
+  std::string s = msg.tag + ":" + msg.data;
+  const char* c = s.c_str();
+  int error = rio_writen(m_fd, c, s.length());
 
-  return m_last_result == SUCCESS;
+  //see if rio_returned error or eof
+  if (error == -1) {
+    m_last_result = EOF_OR_ERROR;
+    return false;
+  }
+
+  //tag invalid if too long
+  if (s.length() > MAXLINE) {
+    m_last_result = INVALID_MSG;
+    return false;
+  }
+  m_last_result = SUCCESS;
+  return true;
 }
 
 bool Connection::receive(Message &msg) {
   // receive a message, storing its tag and data in msg
-  // return true if successful, false if not
-  // make sure that m_last_result is set appropriately
-
-  char buffer[MAXLINE];
-  ssize_t bytes_read = Rio_readlineb(&m_fdbuf, buffer, MAXLINE);
-  if (bytes_read <= 0) {
-    m_last_result = bytes_read == 0 ? EOF_OR_ERROR : EOF_OR_ERROR;
+  char buf[MAXBUF];
+  ssize_t n = rio_readlineb(&m_fdbuf, buf, sizeof(buf));
+  std::string s = std::string(buf);
+  int colon_index = s.find(":");
+  //invalid if no colon to seperate the tag
+  if (colon_index == -1) {
+    m_last_result = INVALID_MSG;
     return false;
   }
-  // Parse the message into tag and data
-  std::istringstream iss(buffer);
-  getline(iss, msg.tag, ':');
-  getline(iss, msg.data);
-  msg.data.pop_back(); // Remove the newline character
-  m_last_result = SUCCESS;
+  //get the tag and data
+  std::string tag = s.substr(0, colon_index);
+  msg.tag = tag;
+  msg.data = s.substr(colon_index + 1, s.length() - 1);
+  //invalid if eof 
+  if (n <= 0) {
+    m_last_result = INVALID_MSG;
+    return false;
+  }
   return true;
 }
