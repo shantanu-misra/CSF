@@ -20,7 +20,7 @@ void MessageQueue::enqueue(Message *msg) {
   // Lock the mutex to protect the queue
   pthread_mutex_lock(&m_lock);
   // Put the specified message on the queue
-  m_messages.push(msg);
+  m_messages.push_back(msg);
   // Unlock the mutex
   pthread_mutex_unlock(&m_lock);
   // Notify any thread waiting for a message to be available
@@ -56,8 +56,10 @@ Message *MessageQueue::dequeue() {
 
   // TODO: remove the next message from the queue, return it
 
+  // Remove the next message from the queue
+  assert(!m_messages.empty()); // Sanity check to make sure the queue isn't empty
   Message *msg = m_messages.front();
-  m_messages.pop();
+  m_messages.pop_front();
 
   // Unlock the mutex
   pthread_mutex_unlock(&m_lock);
