@@ -43,8 +43,7 @@ Message *MessageQueue::dequeue() {
   ts.tv_sec += 1;
 
   // TODO: call sem_timedwait to wait up to 1 second for a message
-
-  //       to be available, return nullptr if no message is available
+  // to be available, return nullptr if no message is available
   // Wait up to 1 second for a message to be available
   if (sem_timedwait(&m_avail, &ts) == -1) {
     // If no message is available, return nullptr
@@ -52,7 +51,6 @@ Message *MessageQueue::dequeue() {
   }
   // Lock the mutex to protect the queue
   pthread_mutex_lock(&m_lock);
-
 
   // TODO: remove the next message from the queue, return it
 

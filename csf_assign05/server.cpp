@@ -47,61 +47,57 @@ struct ClientData {
 namespace {
 
 void handle_sender(Connection* conn, Server* server, const std::string& username) {
-  // handling a sender client
+  // Sender interaction loop
+  while (true) {
+    // Read messages from the sender
+    // Determine the type of message and act accordingly
+    // Use server->find_or_create_room to get the room object
+    // Call room->broadcast_message to send the message to all receivers
+    // Send a response back to the sender (either ok or err)
+    // Break loop if the sender sends a quit message or disconnects
+  }
+  // Perform cleanup
 }
 
 void handle_receiver(Connection* conn, Server* server, const std::string& username) {
-  // handling a receiver client
+  // Receiver interaction loop
+    while (true) {
+      // Wait for a message to be available (use MessageQueue::dequeue)
+      // Send the message to the receiver
+      // Break loop if unable to send message or receiver sends a quit message
+    }
+    // Perform cleanup if necessary
 }
 
 void *worker(void *arg) {
+  // Cast the void* arg to a ClientData* type
+  auto clientData = static_cast<ClientData*>(arg);
+
+  // Detach the thread
   pthread_detach(pthread_self());
 
-  // TODO: use a static cast to convert arg from a void* to
-  //       whatever pointer type describes the object(s) needed
-  //       to communicate with a client (sender or receiver)
-  auto clientData = static_cast<ClientData*>(arg);
-  Connection* conn = clientData->conn;
-  Server* server = clientData->server; // Use the server pointer from ClientData
-  std::string username;
-
-  // TODO: read login message (should be tagged either with
-  //       TAG_SLOGIN or TAG_RLOGIN), send response
+  // Process the login message to determine the client type
   Message loginMessage;
-  if (conn->receive(loginMessage)) {
-    username = loginMessage.data;  // Store username
-    clientData->username = username; // Store username in ClientData as well
+  if (clientData->conn->receive(loginMessage)) {
     // Determine if sender or receiver
     if (loginMessage.tag == TAG_SLOGIN) {
       clientData->isSender = true;
-      conn->send(Message(TAG_OK, "Logged in as sender"));
-      // TODO: Implement sender interaction loop
+      clientData->conn->send(Message(TAG_OK, "Logged in as sender"));
+      handle_sender(clientData->conn, clientData->server, clientData->username);
     } else if (loginMessage.tag == TAG_RLOGIN) {
       clientData->isSender = false;
-      conn->send(Message(TAG_OK, "Logged in as receiver"));
-      // TODO: Implement receiver interaction loop
+      clientData->conn->send(Message(TAG_OK, "Logged in as receiver"));
+      handle_receiver(clientData->conn, clientData->server, clientData->username);
     } else {
-      conn->send(Message(TAG_ERR, "Invalid login tag"));
-      delete clientData;
-      return nullptr;
+      // Handle invalid login tag
+      clientData->conn->send(Message(TAG_ERR, "Invalid login tag"));
     }
   } else {
-      // Handle error or EOF from receiver
-      delete clientData;
-      return nullptr;
+    // Handle error or EOF from connection receive
   }
 
-  // TODO: depending on whether the client logged in as a sender or
-  //       receiver, communicate with the client (implementing
-  //       separate helper functions for each of these possibilities
-  //       is a good idea)
-  if (clientData->isSender) {
-    handle_sender(conn, server, username);
-  } else {
-    handle_receiver(conn, server, username);
-  }
-
-  delete clientData; // Cleanup
+  // Cleanup
+  delete clientData;
   return nullptr;
 }
 
