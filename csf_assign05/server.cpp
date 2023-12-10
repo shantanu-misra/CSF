@@ -22,20 +22,10 @@
 struct ClientData {
   Connection* conn;
   Server* server;
-  bool isSender;
-  std::string username;
 
-  // Modify constructor to accept a Server pointer
-  ClientData(Connection* c, Server* s, bool sender, std::string user)
-    : conn(c), server(s), isSender(sender), username(std::move(user)) {}
-
-  ~ClientData() {
-    delete conn; // Ensure to delete the connection when ClientData is destroyed
-  }
-
-  // Disable copy constructor and assignment operator
-  ClientData(const ClientData&) = delete;
-  ClientData& operator=(const ClientData&) = delete;
+  ClientData(Connection* conn, Server* server)
+    : conn(conn)
+    , server(server) {}
 };
 
 
@@ -46,27 +36,44 @@ struct ClientData {
 
 namespace {
 
+// handle_sender function processes messages from the sender clients
 void handle_sender(Connection* conn, Server* server, const std::string& username) {
-  // Sender interaction loop
-  while (true) {
-    // Read messages from the sender
-    // Determine the type of message and act accordingly
-    // Use server->find_or_create_room to get the room object
-    // Call room->broadcast_message to send the message to all receivers
-    // Send a response back to the sender (either ok or err)
-    // Break loop if the sender sends a quit message or disconnects
+  Message msg;
+  while (conn->receive(msg)) { // Loop until disconnection or quit message
+    if (msg.tag == TAG_SENDALL) {
+      Room* room = server->find_or_create_room("general");
+      room->broadcast_message(username, msg.data);
+      conn->send(Message(TAG_OK, "Message sent\n"));
+    } else if (msg.tag == TAG_JOIN) {
+      // Handle room joining logic
+    } else if (msg.tag == TAG_LEAVE) {
+      // Handle room leaving logic
+    } else if (msg.tag == TAG_QUIT) {
+      conn->send(Message(TAG_OK, "Goodbye\n"));
+      break; // Exit loop on quit message
+    } else {
+      conn->send(Message(TAG_ERR, "Unknown command\n"));
+    }
   }
-  // Perform cleanup
+  // Cleanup before exiting
 }
 
+// handle_receiver function manages messages for receiver clients
 void handle_receiver(Connection* conn, Server* server, const std::string& username) {
-  // Receiver interaction loop
-    while (true) {
-      // Wait for a message to be available (use MessageQueue::dequeue)
-      // Send the message to the receiver
-      // Break loop if unable to send message or receiver sends a quit message
+  User* user = new User(username); // This needs proper user management to avoid memory leaks
+  Room* room = server->find_or_create_room("general"); // Room management needs proper synchronization
+  room->add_member(user);
+
+  Message* msg;
+  while ((msg = user->mqueue.dequeue()) != nullptr) { // Loop until disconnection
+    if (!conn->send(*msg)) {
+      break; // Exit loop on send failure
     }
-    // Perform cleanup if necessary
+    delete msg; // Free message after sending
+  }
+  // Cleanup before exiting
+  room->remove_member(user);
+  delete user;
 }
 
 void *worker(void *arg) {
@@ -81,13 +88,11 @@ void *worker(void *arg) {
   if (clientData->conn->receive(loginMessage)) {
     // Determine if sender or receiver
     if (loginMessage.tag == TAG_SLOGIN) {
-      clientData->isSender = true;
       clientData->conn->send(Message(TAG_OK, "Logged in as sender"));
-      handle_sender(clientData->conn, clientData->server, clientData->username);
+      handle_sender(clientData->conn, clientData->server, loginMessage.data);
     } else if (loginMessage.tag == TAG_RLOGIN) {
-      clientData->isSender = false;
       clientData->conn->send(Message(TAG_OK, "Logged in as receiver"));
-      handle_receiver(clientData->conn, clientData->server, clientData->username);
+      handle_receiver(clientData->conn, clientData->server, loginMessage.data);
     } else {
       // Handle invalid login tag
       clientData->conn->send(Message(TAG_ERR, "Invalid login tag"));
@@ -134,7 +139,7 @@ void Server::handle_client_requests() {
     int clientfd = Accept(m_ssock, nullptr, nullptr);
     if (clientfd != -1) {
       Connection* conn = new Connection(clientfd);
-      ClientData* clientData = new ClientData(conn, this, false, "");
+      ClientData* clientData = new ClientData(conn, this);
       pthread_t tid;
       pthread_create(&tid, nullptr, worker, static_cast<void*>(clientData));
     }
