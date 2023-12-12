@@ -1,6 +1,9 @@
 #include <cassert>
 #include <ctime>
+#include <semaphore.h>
+#include "csapp.h"
 #include "message_queue.h"
+#include "guard.h"
 
 MessageQueue::MessageQueue() {
   // TODO: initialize the mutex and the semaphore
@@ -9,6 +12,14 @@ MessageQueue::MessageQueue() {
 }
 
 MessageQueue::~MessageQueue() {
+  {
+    Guard gaurd(m_lock);
+    while (!m_messages.empty()) {
+      Message* m = m_messages.front();
+      m_messages.pop_front();
+      free(m);
+    }
+  }
   // TODO: destroy the mutex and the semaphore
   pthread_mutex_destroy(&m_lock);
   sem_destroy(&m_avail);
@@ -16,51 +27,44 @@ MessageQueue::~MessageQueue() {
 
 void MessageQueue::enqueue(Message *msg) {
   // TODO: put the specified message on the queue
-
   // Lock the mutex to protect the queue
-  pthread_mutex_lock(&m_lock);
-  // Put the specified message on the queue
-  m_messages.push_back(msg);
+  { 
+    Guard guard(m_lock);
+      // Put the specified message on the queue
+    m_messages.push_back(msg);
+  }   
   // Unlock the mutex
-  pthread_mutex_unlock(&m_lock);
   // Notify any thread waiting for a message to be available
   sem_post(&m_avail);
-
   // be sure to notify any thread waiting for a message to be
   // available by calling sem_post
 }
 
 Message *MessageQueue::dequeue() {
-  struct timespec ts;
-
-  // get the current time using clock_gettime:
-  // we don't check the return value because the only reason
-  // this call would fail is if we specify a clock that doesn't
-  // exist
-  clock_gettime(CLOCK_REALTIME, &ts);
-
-  // compute a time one second in the future
-  ts.tv_sec += 1;
-
-  // TODO: call sem_timedwait to wait up to 1 second for a message
-  // to be available, return nullptr if no message is available
-  // Wait up to 1 second for a message to be available
-  if (sem_timedwait(&m_avail, &ts) == -1) {
-    // If no message is available, return nullptr
-    return nullptr;
+  //wait for a new message
+  sem_wait(&m_avail);
+  Message *msg = nullptr;
+  {
+    Guard g(m_lock);
+    //get the last message from the q
+    msg = m_messages.front();
+    m_messages.pop_front();
   }
-  // Lock the mutex to protect the queue
-  pthread_mutex_lock(&m_lock);
-
-  // TODO: remove the next message from the queue, return it
-
-  // Remove the next message from the queue
-  assert(!m_messages.empty()); // Sanity check to make sure the queue isn't empty
-  Message *msg = m_messages.front();
-  m_messages.pop_front();
-
-  // Unlock the mutex
-  pthread_mutex_unlock(&m_lock);
 
   return msg;
+  /*
+  struct timespec ts;
+  clock_gettime(CLOCK_REALTIME, &ts);
+  ts.tv_sec += 1;
+  Message *msg = nullptr;
+  if (sem_timedwait(&m_avail, &ts) == -1) {
+    return msg;
+  }
+   sem_wait(&m_avail);
+  {
+    Guard guard(m_lock);
+    msg = m_messages.front();
+    m_messages.pop_front();
+  }
+  return msg;*/
 }

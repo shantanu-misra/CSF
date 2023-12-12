@@ -28,8 +28,6 @@ struct ClientData {
     , server(server) {}
 };
 
-
-
 ////////////////////////////////////////////////////////////////////////
 // Client thread functions
 ////////////////////////////////////////////////////////////////////////
@@ -37,75 +35,89 @@ struct ClientData {
 namespace {
 
 // handle_sender function processes messages from the sender clients
-void handle_sender(Connection* conn, Server* server, const std::string& username) {
-  Message msg;
-  while (conn->receive(msg)) { // Loop until disconnection or quit message
-    if (msg.tag == TAG_SENDALL) {
-      Room* room = server->find_or_create_room("general");
-      room->broadcast_message(username, msg.data);
-      conn->send(Message(TAG_OK, "Message sent\n"));
-    } else if (msg.tag == TAG_JOIN) {
-      // Handle room joining logic
-    } else if (msg.tag == TAG_LEAVE) {
-      // Handle room leaving logic
-    } else if (msg.tag == TAG_QUIT) {
+void handle_sender(Connection* conn, Server* server, const std::string username, Message *message) {
+  User * newUser = new User(username.substr(0, username.length()-1));
+  conn->send(*message);
+  Room* room = nullptr;
+  while (1) { // Loop until disconnection or quit message
+    conn->receive(*message);
+    if (message->tag == TAG_SENDALL) {
+      //Checks if message is done correctly
+      if(message->data.length() > Message::MAX_LEN || message->data.empty() || message->data.at(message->data.length()-1) != '\n') {
+        conn->send(Message(TAG_ERR, "Message is not in right format\n"));
+      }
+      //sends message out
+      else{
+        room->broadcast_message(newUser->username, message->data);
+        conn->send(Message(TAG_OK, "Message was sent succesfully\n"));
+      }
+    } else if (message->tag == TAG_JOIN) {
+        //Joins room or creats one and sends message
+        room = server->find_or_create_room(message->data.substr(0, message->data.length()-1));
+        conn->send(Message(TAG_OK, "Joined room\n"));
+    } else if (message->tag == TAG_LEAVE) {
+      //leaves room
+      conn->send(Message(TAG_OK, "Left was succesful\n"));
+    } else if (message->tag  == TAG_QUIT) {
       conn->send(Message(TAG_OK, "Goodbye\n"));
       break; // Exit loop on quit message
     } else {
-      conn->send(Message(TAG_ERR, "Unknown command\n"));
+      conn->send(Message(TAG_ERR, "Unknown tag\n"));
     }
   }
+  delete(newUser);
+  delete(room);
+  delete(conn);
+  delete(message);
   // Cleanup before exiting
 }
 
 // handle_receiver function manages messages for receiver clients
-void handle_receiver(Connection* conn, Server* server, const std::string& username) {
-  User* user = new User(username); // This needs proper user management to avoid memory leaks
-  Room* room = server->find_or_create_room("general"); // Room management needs proper synchronization
-  room->add_member(user);
-
-  Message* msg;
-  while ((msg = user->mqueue.dequeue()) != nullptr) { // Loop until disconnection
-    if (!conn->send(*msg)) {
+void handle_receiver(Connection* conn, Server* server, const std::string username, Message *message) {
+  User* user = new User(username.substr(0, username.length()-1)); // This needs proper user management to avoid memory leaks
+  Room *room;
+  conn->send(*message);
+  conn->receive(*message);
+  if(message->tag == TAG_JOIN) {
+    room = server->find_or_create_room(message->data.substr(0, message->data.length() - 1)); // Room management needs proper synchronization
+    room->add_member(user);
+  }
+  message->tag = TAG_OK;
+  message->data = "Joined the room\n";
+  conn->send(*message);
+  //Message* msg;
+  while ((message = user->mqueue.dequeue()) != nullptr) { // Loop until disconnection
+    if (!conn->send(*message)) {
       break; // Exit loop on send failure
     }
-    delete msg; // Free message after sending
+    delete message; // Free message after sending
   }
   // Cleanup before exiting
-  room->remove_member(user);
-  delete user;
+   //room->remove_member(user);
 }
 
 void *worker(void *arg) {
-  // Cast the void* arg to a ClientData* type
-  auto clientData = static_cast<ClientData*>(arg);
-
   // Detach the thread
   pthread_detach(pthread_self());
-
+  ClientData *currClient = (ClientData*)arg;
   // Process the login message to determine the client type
-  Message loginMessage;
-  if (clientData->conn->receive(loginMessage)) {
+  Message *loginMessage = new Message();
+  if (currClient->conn->receive(*loginMessage)) {
     // Determine if sender or receiver
-    if (loginMessage.tag == TAG_SLOGIN) {
-      clientData->conn->send(Message(TAG_OK, "Logged in as sender"));
-      handle_sender(clientData->conn, clientData->server, loginMessage.data);
-    } else if (loginMessage.tag == TAG_RLOGIN) {
-      clientData->conn->send(Message(TAG_OK, "Logged in as receiver"));
-      handle_receiver(clientData->conn, clientData->server, loginMessage.data);
+    if (loginMessage->tag == TAG_SLOGIN) {
+      handle_sender(currClient->conn, currClient->server, loginMessage->data, new Message(TAG_OK, "Logged in as sender\n"));
+    } else if (loginMessage->tag == TAG_RLOGIN) {
+      handle_receiver(currClient->conn, currClient->server, loginMessage->data, new Message(TAG_OK, "Logged in as receiver\n"));
     } else {
-      // Handle invalid login tag
-      clientData->conn->send(Message(TAG_ERR, "Invalid login tag"));
+     //Handle invalid login tag
+      currClient->conn->send(Message(TAG_ERR, "Invalid login tag\n"));
     }
-  } else {
-    // Handle error or EOF from connection receive
-  }
-
+  } 
   // Cleanup
-  delete clientData;
+  delete(loginMessage);
+  delete currClient;
   return nullptr;
 }
-
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -129,7 +141,7 @@ bool Server::listen() {
   //       if successful, false if not
   std::string portStr = std::to_string(m_port);
    m_ssock = open_listenfd(portStr.c_str());
-  return m_ssock != -1;
+  return m_ssock >= 0;
 }
 
 void Server::handle_client_requests() {
@@ -137,11 +149,11 @@ void Server::handle_client_requests() {
   //       pthread for each connected client
   while (true) {
     int clientfd = Accept(m_ssock, nullptr, nullptr);
-    if (clientfd != -1) {
-      Connection* conn = new Connection(clientfd);
-      ClientData* clientData = new ClientData(conn, this);
-      pthread_t tid;
-      pthread_create(&tid, nullptr, worker, static_cast<void*>(clientData));
+    Connection* conn = new Connection(clientfd);
+    ClientData* clientData = new ClientData(conn, this);
+    pthread_t tid;
+    if(pthread_create(&tid, nullptr, worker, clientData) != 0) {
+      std::cerr<<"Error creating thread\n";
     }
   }
 }
@@ -149,13 +161,17 @@ void Server::handle_client_requests() {
 Room *Server::find_or_create_room(const std::string &room_name) {
   // TODO: return a pointer to the unique Room object representing
   //       the named chat room, creating a new one if necessary
-  Guard g(m_lock); // Locking to ensure thread safety
-  auto it = m_rooms.find(room_name);
-  if (it != m_rooms.end()) {
-    return it->second;
-  } else {
-    Room *newRoom = new Room(room_name);
-    m_rooms[room_name] = newRoom;
-    return newRoom;
+  {
+    Guard guard(m_lock); // Locking to ensure thread safety
+    int found = m_rooms.count(room_name);
+    if (found) {
+      //returns found room
+      return m_rooms.at(room_name);
+    } else {
+      //create new room if it does not exit
+      Room *newRoom = new Room(room_name);
+      m_rooms.insert({room_name, newRoom});
+      return newRoom;
+    }
   }
 }
